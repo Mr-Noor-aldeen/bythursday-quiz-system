@@ -2,40 +2,31 @@ import sys
 import subprocess
 import os
 
-REQUIRED_PACKAGES = [
-    "fastapi",
-    "uvicorn",
-    "jinja2",
-    "python-multipart",
-    "pytest",
-    "httpx"
-]
-
 def ensure_dependencies():
-    """التحقق من تثبيت الحزم المطلوبة وتثبيتها تلقائياً إن كان الجهاز نظيفاً"""
-    missing = []
-    for pkg in REQUIRED_PACKAGES:
-        # استبدال الشرطات للتحقق من اسم الموديول البرمجي
-        module_name = "multipart" if pkg == "python-multipart" else pkg.split("[")[0]
-        try:
-            __import__(module_name)
-        except ImportError:
-            missing.append(pkg)
-            
-    if missing:
-        print("[!] Clean machine detected. Installing missing packages:", missing)
+    """
+    Guarantees that exact dependencies from requirements.txt are installed.
+    Handles clean machines, missing packages, and pre-existing version conflicts automatically.
+    """
+    try:
+        # Run silent dependency reconciliation
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "-q", "-r", "requirements.txt"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+    except Exception:
+        # Fallback to visible install if silent fails
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-        print("[✓] All packages successfully installed.\n")
 
 if __name__ == "__main__":
     ensure_dependencies()
     
-    # دعم تشغيل الاختبارات المؤتمتة بأمر واحد
+    # 1-Command Automated Testing Mode
     if len(sys.argv) > 1 and sys.argv[1] == "--test":
         print("[*] Running automated test suites via pytest...")
         sys.exit(subprocess.call([sys.executable, "-m", "pytest"]))
         
-    # تشغيل السيرفر تلقائياً
+    # 1-Command Web Server Launch Mode
     import uvicorn
     print("\n" + "="*60)
     print("  Amman Tutoring Center Quiz Engine is Running!")
