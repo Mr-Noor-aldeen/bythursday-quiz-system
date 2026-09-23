@@ -1,6 +1,6 @@
 # Amman Tutoring Center Quiz Engine
 
-A clean, responsive, and robust web-based assessment platform built for **Amman Tutoring Center (مركز نور التعليمي)** to replace paper quizzes with timed, auto-graded digital assessments.
+A clean, responsive, and robust web-based assessment platform built for Amman Tutoring Center (مركز نور التعليمي) to replace paper quizzes with timed, auto-graded digital assessments.
 
 Designed with a mobile-first approach, the system supports multi-role access (Admin, Teachers, Students), class-isolated quizzes, configurable negative marking (-0.5 penalties), and strict single-submission enforcement.
 
@@ -8,7 +8,7 @@ Designed with a mobile-first approach, the system supports multi-role access (Ad
 
 ## 🚀 One-Command Launch (Zero-Config / Clean Machine)
 
-The application starts immediately on any clean machine. The startup runner automatically detects and installs any missing dependencies, initializes the SQLite database schema, and seeds all sample data before launching.
+The application starts immediately on any clean machine. The startup runner automatically detects missing dependencies, initializes the SQLite database schema, and seeds all sample data before launching.
 
 ### Single Command to Run:
 
@@ -26,7 +26,7 @@ To execute the test suite verifying data integrity, negative marking rules, sing
 python run.py --test
 ```
 
-*(Or run `pytest` directly)*.
+*(Or run `pytest` directly).*
 
 ## 👥 Seeded Users & Login Credentials
 
@@ -43,8 +43,12 @@ All sample data described in the client brief is automatically seeded on startup
 | **Student (Class 10B)**     | `std_10b_01` to `std_10b_20` | `student123` | Class 10B (20 students)                                           |
 | **Student (Class 11A)**     | `std_11a_01` to `std_11a_20` | `student123` | Class 11A (20 students)                                           |
 
+> 💡 **Reviewer Sandbox Tip:** Log in as **`nour_admin`** to access the **Reviewer Sandbox** directly inside the Admin Dashboard. You can preview and test any teacher or student portal with a single click without logging out!
+
 ## 🌐 Live Production Deployment
 
-The application is deployed and live on Vercel:
+The application is deployed and live for visual preview:
 
-[**https://bythursday-quiz-system.vercel.app**](https://bythursday-quiz-system.vercel.app)
+* **Live URL:** https://bythursday-quiz-system.vercel.app
+
+*(Note: For full state persistence and test isolation with SQLite, running locally via `python run.py` is recommended).*
