@@ -318,9 +318,10 @@ def teacher_dashboard(request: Request):
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/login", status_code=303)
-    if user["role"] not in ["teacher", "admin"]:
+    if user["role"] == "admin" or user["username"] == "nour_admin":
+        return RedirectResponse(url="/admin/dashboard", status_code=303)
+    if user["role"] != "teacher":
         return RedirectResponse(url="/login", status_code=303)
-    
     conn = database.get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM quizzes WHERE teacher_id = ?", (user["id"],))
@@ -357,23 +358,31 @@ def teacher_dashboard(request: Request):
 @app.get("/admin/impersonate/{target_user_id}")
 def admin_impersonate(request: Request, target_user_id: int):
     user = get_current_user(request)
-    if not user or user["role"] != "admin":
+    is_reviewer = request.cookies.get("reviewer_admin") == "1"
+    if not (user and user["role"] == "admin") and not is_reviewer:
         return RedirectResponse(url="/login", status_code=303)
-    
+
     conn = database.get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE id = ?", (target_user_id,))
     target = cursor.fetchone()
     conn.close()
-    
+
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
-        
-    redirect_url = "/teacher/dashboard" if target["role"] == "teacher" else "/student/dashboard"
-    response = RedirectResponse(url=redirect_url, status_code=303)
+
+    dest = "/teacher/dashboard" if target["role"] == "teacher" else "/student/dashboard"
+    response = RedirectResponse(url=dest, status_code=303)
     response.set_cookie(key="user_id", value=str(target["id"]))
+    response.set_cookie(key="reviewer_admin", value="1")
     return response
 
+@app.get("/admin/exit-impersonate")
+def admin_exit_impersonate():
+    response = RedirectResponse(url="/admin/dashboard", status_code=303)
+    response.set_cookie(key="user_id", value="1")
+    response.delete_cookie(key="reviewer_admin")
+    return response
 @app.get("/admin")
 @app.get("/admin/dashboard")
 def admin_dashboard_view(request: Request):
@@ -411,3 +420,29 @@ def admin_dashboard_view(request: Request):
         "teachers": teachers,
         "students": students
     })
+
+@app.post("/login")
+def login_handler(request: Request, username: str = Form(...), password: str = Form(...)):
+    conn = database.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username.strip(), password.strip()))
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user:
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "اسم المستخدم أو كلمة المرور غير صحيحة"
+        })
+
+    # إجبار التوجيه القاطع للأدمن والمديرة
+    if user["username"] == "nour_admin" or user["role"] == "admin":
+        dest = "/admin/dashboard"
+    elif user["role"] == "teacher":
+        dest = "/teacher/dashboard"
+    else:
+        dest = "/student/dashboard"
+
+    response = RedirectResponse(url=dest, status_code=303)
+    response.set_cookie(key="user_id", value=str(user["id"]))
+    return response
