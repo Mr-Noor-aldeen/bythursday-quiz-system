@@ -274,45 +274,44 @@ def quiz_result(request: Request, quiz_id: int):
     })
 
 # 6. لوحة تحكم المعلم والإدارة
-@app.get("/teacher/dashboard", response_class=HTMLResponse)
-def teacher_dashboard(request: Request):
+@app.get("/teacher/dashboard")
+@app.get("/admin/dashboard")
+@app.get("/admin")
+def unified_staff_dashboard(request: Request):
     user = get_current_user(request)
-    if not user or user["role"] not in ["teacher", "admin"]:
-        return RedirectResponse(url="/login", status_code=302)
+    if not user or user["role"] not in ["admin", "teacher"]:
+        return RedirectResponse(url="/login", status_code=303)
 
-    conn = get_db()
+    conn = database.get_db()
     cursor = conn.cursor()
-
-    if user["role"] == "admin":
-        cursor.execute("SELECT q.*, u.name as teacher_name FROM quizzes q JOIN users u ON q.teacher_id = u.id ORDER BY q.id DESC")
-    else:
-        cursor.execute("SELECT q.*, u.name as teacher_name FROM quizzes q JOIN users u ON q.teacher_id = u.id WHERE q.teacher_id = ? ORDER BY q.id DESC", (user["id"],))
-    quizzes = cursor.fetchall()
-
-    query = """
+    cursor.execute('''
         SELECT s.*, u.name as student_name, u.class_name, q.title as quiz_title
         FROM submissions s
         JOIN users u ON s.student_id = u.id
         JOIN quizzes q ON s.quiz_id = q.id
-    """
-    if user["role"] == "teacher":
-        query += " WHERE q.teacher_id = ?"
-        cursor.execute(query + " ORDER BY s.id DESC", (user["id"],))
-    else:
-        cursor.execute(query + " ORDER BY s.id DESC")
-    submissions = cursor.fetchall()
+        ORDER BY s.submitted_at DESC
+    ''')
+    subs = cursor.fetchall()
+    cursor.execute("SELECT COUNT(*) as total FROM submissions")
+    total_subs = cursor.fetchone()["total"]
+    cursor.execute("SELECT AVG(percentage) as avg_p FROM submissions")
+    row = cursor.fetchone()
+    avg_score = round(row["avg_p"] or 0, 1)
 
-    total_submissions = len(submissions)
-    avg_score = round(sum(s["percentage"] for s in submissions) / total_submissions, 1) if total_submissions > 0 else 0
+    cursor.execute("SELECT * FROM users WHERE role = 'teacher' ORDER BY name ASC")
+    teachers = cursor.fetchall()
+    cursor.execute("SELECT * FROM users WHERE role = 'student' ORDER BY class_name, name ASC")
+    students = cursor.fetchall()
     conn.close()
 
     return templates.TemplateResponse("teacher_dashboard.html", {
         "request": request,
         "user": user,
-        "quizzes": quizzes,
-        "submissions": submissions,
-        "total_submissions": total_submissions,
-        "avg_score": avg_score
+        "submissions": subs,
+        "total_submissions": total_subs,
+        "avg_score": avg_score,
+        "teachers": teachers,
+        "students": students
     })
 
 @app.get("/admin/impersonate/{target_user_id}")
