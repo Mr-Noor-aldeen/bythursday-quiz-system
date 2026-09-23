@@ -1,68 +1,54 @@
-# Amman Tutoring Center — Online Quiz Platform
+# Amman Tutoring Center Quiz Engine
 
-A lightweight, mobile-first web-based assessment platform built for Nour's tutoring center in Amman to replace paper-based weekly quizzes[cite: 1].
+A clean, mobile-first assessment system built for **Amman Tutoring Center (مركز نور التعليمي)** to replace paper quizzes with timed, auto-graded digital assessments.
 
-## Tech Stack
-
-* **Backend:** Python 3.10+ / FastAPI
-* **Database:** SQLite (Zero external configuration required)
-* **Frontend:** Jinja2 Templates + Tailwind CSS (Responsive & Native Arabic RTL support)[cite: 1]
-* **Testing:** Pytest & HTTPX TestClient
+Supports multi-role access (Admin, Teachers, Students), class-isolated quizzes, configurable negative marking (-0.5 penalties), and single-submission enforcement.
 
 ---
 
-## Quickstart (One Command Setup)[cite: 1]
+## 🚀 Quickstart (One Command to Run)
 
-### 1. Environment Setup
+The application starts immediately on any clean machine. The SQLite database self-initializes and seeds all sample data on first launch.
 
-```bash
-python -m venv venv
-
-# Windows:
-.\venv\Scripts\activate
-
-# Linux/macOS:
-source venv/bin/activate
-```
-
-### 2. Install Dependencies & Seed Sample Data
+### 1. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
-python seed.py
 ```
 
-### 3. Run the Application
+### 2. Start the Server (Single Command)
 
 ```bash
 uvicorn main:app --reload
 ```
 
-Open your browser at: `http://127.0.0.1:8000`
+Open [**http://localhost:8000**](http://localhost:8000) in your browser or phone.
 
----
-
-## Automated Tests
-
-Run the test suite covering authentication, negative grading calculations, and duplicate submission prevention:
+### 3. Run Automated Tests
 
 ```bash
-pytest -v
+pytest
 ```
 
----
+*Executes all test suites (`test_quiz.py`) verifying schema integrity, negative marking edge cases, duplicate submission locks, and endpoint authentication.*
 
-## Demo Login Credentials
+## 👥 Seeded Users & Login Credentials
 
-The database is pre-seeded with cohorts for classes `10A`, `10B`, and `11A` (60 students total), 4 teachers, and the administrator:
+All sample data described in the client brief is automatically seeded on startup:
 
-| Role                  | Username     | Password     | Notes                                            |
-| --------------------- | ------------ | ------------ | ------------------------------------------------ |
-| **Admin (Nour)**      | `nour_admin` | `admin123`   | Full access across all classes and teachers      |
-| **Teacher (Math)**    | `t_ahmad`    | `teacher123` | Manages 10A quiz & views live submissions        |
-| **Teacher (Physics)** | `t_sarah`    | `teacher123` | Manages 11A quiz                                 |
-| **Student (10A)**     | `std_10a_01` | `student123` | Pre-submitted demo quiz (Score: 17.5 / 20)       |
-| **Student (10A)**     | `std_10a_02` | `student123` | Fresh student ready to take the 15-question quiz |
-| **Student (11A)**     | `std_11a_01` | `student123` | Access to Physics quiz                           |
+| **Role**                    | **Username**                 | **Password** | **Notes / Scope**                       |
+| --------------------------- | ---------------------------- | ------------ | --------------------------------------- |
+| **Center Director (Admin)** | `nour_admin`                 | `admin123`   | Center-wide overview and global metrics |
+| **Teacher (Math)**          | `t_ahmad`                    | `teacher123` | Class 10A Mathematics                   |
+| **Teacher (Physics)**       | `t_sarah`                    | `teacher123` | Physics curriculum                      |
+| **Teacher (Chemistry)**     | `t_khaled`                   | `teacher123` | Chemistry curriculum                    |
+| **Teacher (Biology)**       | `t_reem`                     | `teacher123` | Biology curriculum                      |
+| **Student (Class 10A)**     | `std_10a_01` to `std_10a_20` | `student123` | Class 10A (20 students)                 |
+| **Student (Class 10B)**     | `std_10b_01` to `std_10b_20` | `student123` | Class 10B (20 students)                 |
+| **Student (Class 11A)**     | `std_11a_01` to `std_11a_20` | `student123` | Class 11A (20 students)                 |
 
-(All student accounts follow the pattern `std_10a_01` to `std_10a_20`, `std_10b_01` to `std_10b_20`, and `std_11a_01` to `std_11a_20` with password `student123`).
+## 🌐 Live Production Deployment
+
+The project is deployed and live on Vercel:
+
+[**https://bythursday-quiz-system.vercel.app**](https://bythursday-quiz-system.vercel.app)
