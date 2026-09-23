@@ -3,22 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مركز نور التعليمي — لوحة الإدارة العامة</title>
+  <title>مركز نور التعليمي — لوحة الإدارة العامة والمعاينة السريعة</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Tajawal', sans-serif; }
-  </style>
+  <style>body { font-family: 'Tajawal', sans-serif; }</style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen pb-16">
 
-  <!-- شريط الرأس الإداري -->
+  <!-- Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-indigo-600/20">
-          ن
-        </div>
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-indigo-600/20">ن</div>
         <div>
           <h1 class="font-bold text-slate-900 text-base leading-tight">مركز نور التعليمي — عمان</h1>
           <p class="text-xs text-slate-500">لوحة الإدارة العامة والمراقبة الشاملة</p>
@@ -28,18 +24,16 @@
       <div class="flex items-center gap-3">
         <div class="hidden sm:flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl">
           <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-          <span class="text-xs font-bold text-indigo-900">نور (مديرة المركز)</span>
+          <span class="text-xs font-bold text-indigo-900">نور (المديرة العامة)</span>
         </div>
-        <a href="/logout" class="text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl transition">
-          تسجيل الخروج
-        </a>
+        <a href="/logout" class="text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl transition">تسجيل الخروج</a>
       </div>
     </div>
   </header>
 
   <main class="max-w-6xl mx-auto px-4 pt-6 space-y-6">
 
-    <!-- بطاقات الإحصاءات العامة للمركز -->
+    <!-- KPI Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
       <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
         <p class="text-xs font-bold text-slate-500 mb-1">إجمالي التسليمات</p>
@@ -59,21 +53,21 @@
       </div>
     </div>
 
-    <!-- ميزة التبديل السريع والدليل الشامل للمراجعين والمديرة -->
-    <div class="bg-white border border-indigo-200 rounded-2xl p-5 md:p-6 shadow-sm overflow-hidden">
+    <!-- Reviewer Master Roster & Impersonation Sandbox -->
+    <div class="bg-white border-2 border-indigo-300 rounded-2xl p-5 md:p-6 shadow-sm overflow-hidden">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
         <div>
           <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
             <span>👥 دليل شُعب المركز وميزة المعاينة السريعة (Reviewer Sandbox)</span>
           </h2>
-          <p class="text-xs text-slate-500 mt-0.5">انقر على زر المعاينة بجانب أي مستخدم لتقمص حسابه واختبار صلاحياته وعزل الشعبة بضغطة زر واحدة.</p>
+          <p class="text-xs text-slate-500 mt-0.5">انقر على زر المعاينة بجانب أي مستخدم لتقمص حسابه واختبار صلاحياته وعزل الشعب بضغطة زر واحدة دون كلمات سر.</p>
         </div>
         <div class="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-lg self-start sm:self-auto">
-          🔒 خاص بالإدارة
+          🔒 خاص بالإدارة والمراجعين
         </div>
       </div>
 
-      <!-- أزرار التبويب بين المعلمين والشعب الثلاث -->
+      <!-- Cohort & Teacher Tabs -->
       <div class="flex items-center gap-2 mt-4 pb-2 overflow-x-auto border-b border-slate-200">
         <button onclick="switchTab('teachers')" id="tab-teachers" class="tab-btn px-4 py-2 text-xs font-bold rounded-xl transition bg-indigo-600 text-white">
           طاقم المعلمين ({{ teachers|length }})
@@ -89,7 +83,7 @@
         </button>
       </div>
 
-      <!-- محتوى تبويب المعلمين -->
+      <!-- Teachers Tab -->
       <div id="content-teachers" class="tab-content mt-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {% for t in teachers %}
@@ -106,7 +100,7 @@
         </div>
       </div>
 
-      <!-- محتوى تبويب الشعبة 10A -->
+      <!-- Cohort 10A Tab -->
       <div id="content-class10A" class="tab-content mt-4 hidden">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
           {% for s in students if s.class_name == '10A' %}
@@ -115,7 +109,7 @@
               <p class="font-bold text-xs text-slate-900 truncate">{{ s.name }}</p>
               <span class="text-[10px] text-slate-400 font-mono">{{ s.username }}</span>
             </div>
-            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg transition">
+            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition">
               معاينة ↗
             </a>
           </div>
@@ -123,7 +117,7 @@
         </div>
       </div>
 
-      <!-- محتوى تبويب الشعبة 10B -->
+      <!-- Cohort 10B Tab -->
       <div id="content-class10B" class="tab-content mt-4 hidden">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
           {% for s in students if s.class_name == '10B' %}
@@ -132,7 +126,7 @@
               <p class="font-bold text-xs text-slate-900 truncate">{{ s.name }}</p>
               <span class="text-[10px] text-slate-400 font-mono">{{ s.username }}</span>
             </div>
-            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg transition">
+            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition">
               معاينة ↗
             </a>
           </div>
@@ -140,7 +134,7 @@
         </div>
       </div>
 
-      <!-- محتوى تبويب الشعبة 11A -->
+      <!-- Cohort 11A Tab -->
       <div id="content-class11A" class="tab-content mt-4 hidden">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
           {% for s in students if s.class_name == '11A' %}
@@ -149,7 +143,7 @@
               <p class="font-bold text-xs text-slate-900 truncate">{{ s.name }}</p>
               <span class="text-[10px] text-slate-400 font-mono">{{ s.username }}</span>
             </div>
-            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg transition">
+            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition">
               معاينة ↗
             </a>
           </div>
@@ -158,10 +152,9 @@
       </div>
     </div>
 
-    <!-- سجل تسليمات المركز الحية -->
+    <!-- Live Submissions Ledger -->
     <div class="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm">
       <h2 class="text-sm font-bold text-slate-900 mb-4">سجل نتائج وتسليمات الطلاب الحية عبر المركز</h2>
-      
       {% if submissions %}
       <div class="overflow-x-auto">
         <table class="w-full text-right text-xs">
