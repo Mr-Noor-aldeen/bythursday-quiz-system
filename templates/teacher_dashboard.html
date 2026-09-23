@@ -23,10 +23,7 @@
   </div>
   {% endif %}
 
-
-  
-
-  <!-- Navbar المعلم القياسي -->
+  <!-- Navbar المعلم -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
       <div class="flex items-center space-x-3 space-x-reverse">
@@ -41,7 +38,8 @@
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-    <!-- إحصائيات المعلم -->
+
+    <!-- كروت الإحصائيات -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <span class="text-xs font-bold text-slate-400 block mb-1">تسليمات اختباراتك</span>
@@ -57,10 +55,52 @@
       </div>
     </div>
 
-    <!-- جدول نتائج طلاب هذا المعلم فقط -->
+    <!-- قسم عرض اختبارات المعلم المفعلة للشعب (تمت إضافته وإبرازه) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div>
+          <h3 class="font-bold text-slate-900 text-sm">📚 الاختبارات التي قمت بتفعيلها للشُعب الأكاديمية</h3>
+          <p class="text-xs text-slate-500 mt-0.5">قائمة الاختبارات المعتمدة والنشطة حالياً على منصة الطلاب</p>
+        </div>
+        <span class="text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg">
+          {{ quizzes|length }} اختبار نشط
+        </span>
+      </div>
+      
+      <div class="p-5">
+        {% if quizzes %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {% for q in quizzes %}
+          <div class="p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-300 transition shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg border border-blue-200">
+                  الشعبة {{ q.class_name }}
+                </span>
+                <span class="text-xs text-slate-400 font-mono">⏱️ {{ q.duration_minutes }} دقيقة</span>
+              </div>
+              <h4 class="font-bold text-slate-900 text-sm mb-1">{{ q.title }}</h4>
+              <p class="text-xs text-slate-500">متاح لجميع طلاب الشعبة {{ q.class_name }} عبر بواباتهم الأكاديمية.</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-emerald-600 font-bold flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> نشط حالياً
+              </span>
+              <span class="text-slate-400">معتمد في خطة التقييم</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs text-slate-400 py-4 text-center">لا توجد اختبارات مسندة لهذا الحساب حالياً.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- جدول نتائج وتسليمات طلاب المعلم -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-        <h3 class="font-bold text-slate-800 text-base">سجل نتائج طلابك</h3>
+        <h3 class="font-bold text-slate-800 text-sm">سجل نتائج طلابك</h3>
         <span class="text-xs text-slate-400">محدث لحظياً</span>
       </div>
       <div class="overflow-x-auto">

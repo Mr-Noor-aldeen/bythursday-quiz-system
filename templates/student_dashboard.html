@@ -1,93 +1,99 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز نور التعليمي - لوحة الطالب</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Tajawal', sans-serif; }</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مركز نور التعليمي — بوابة الطالب</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Tajawal', sans-serif; }</style>
 </head>
-<body class="bg-slate-50 min-h-screen">
-    <!-- Navbar -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div class="max-w-4xl mx-auto px-4 py-3.5 flex justify-between items-center">
-            <div class="flex items-center space-x-3 space-x-reverse">
-                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">ن</div>
-                <div>
-                    <h2 class="text-sm font-bold text-slate-800">{{ user.name }}</h2>
-                    <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">شعبة {{ user.class_name }}</span>
-                </div>
-            </div>
-            <a href="/logout" class="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-3 py-2 rounded-xl transition">
-                تسجيل الخروج
-            </a>
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased pb-16">
+
+  {% if request.cookies.get('reviewer_admin') == '1' %}
+  <!-- شريط العودة للمديرة والمراجعين في لوحة الطالب -->
+  <div class="bg-indigo-900 text-white px-4 py-2.5 flex items-center justify-between text-xs font-bold sticky top-0 z-50 shadow-md">
+    <div class="flex items-center gap-2">
+      <span class="animate-pulse">👁️</span>
+      <span>وضع المعاينة السريعة (Sandbox): أنت تعاين الآن حساب الطالب {{ user.name }} (الشعبة {{ user.class_name }})</span>
+    </div>
+    <a href="/admin/exit-impersonate" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl transition shadow-sm">
+      🔙 إنهاء المعاينة والعودة للإدارة العامة ↗
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Navbar الطالب -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 py-3.5 flex justify-between items-center">
+      <div class="flex items-center space-x-3 space-x-reverse">
+        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg">ط</div>
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">{{ user.name }}</h2>
+          <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+            طالب — الشعبة {{ user.class_name }}
+          </span>
         </div>
-    </header>
+      </div>
+      <a href="/logout" class="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-3 py-2 rounded-xl transition">تسجيل الخروج</a>
+    </div>
+  </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-6">
-        <div class="mb-6">
-            <h1 class="text-xl font-bold text-slate-900">الاختبارات المخصصة لشعبتك</h1>
-            <p class="text-xs text-slate-500 mt-0.5">يرجى الالتزام بالوقت المحدد لكل اختبار، لا يمكن تقديم الاختبار أكثر من مرة.</p>
+  <main class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+
+    <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+      <div class="border-b border-slate-100 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h3 class="font-extrabold text-slate-900 text-lg">📋 جدول الاختبارات الأكاديمية لشعبتك ({{ user.class_name }})</h3>
+          <p class="text-xs text-slate-500 mt-1">الاختبارات المفعلة من قِبل مدرسي شعبتك</p>
         </div>
+        <span class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl self-start sm:self-auto font-mono">
+          الشعبة: {{ user.class_name }}
+        </span>
+      </div>
 
-        <div class="space-y-4">
-            {% for q in quizzes %}
-            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm transition hover:shadow-md">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                    <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <h3 class="text-base font-bold text-slate-800">{{ q.title }}</h3>
-                            {% if q.has_negative_marking %}
-                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                نظام علامات سالبة (-{{ q.negative_mark_value }})
-                            </span>
-                            {% endif %}
-                        </div>
-                        <p class="text-xs text-slate-500">{{ q.description or 'لا يوجد وصف إضافي' }}</p>
-                    </div>
-                    
-                    <div class="text-xs text-slate-500 sm:text-left shrink-0">
-                        <div>المعلم: <span class="font-bold text-slate-700">{{ q.teacher_name }}</span></div>
-                        <div>المدة: <span class="font-bold text-slate-700">{{ q.duration_minutes }} دقيقة</span></div>
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span class="text-xs text-slate-400 font-mono">الأسئلة: {{ q.question_count }}</span>
-
-                    {% if q.submission_id %}
-                        <!-- الطالب اختبر مسبقاً -->
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100">
-                                نتيجتك: {{ q.score }}/{{ q.total_possible }} ({{ q.percentage }}%)
-                            </span>
-                            <a href="/quiz/{{ q.id }}/result" class="text-xs font-bold text-blue-600 hover:underline">
-                                التفاصيل
-                            </a>
-                        </div>
-                    {% elif now_str < q.start_date %}
-                        <span class="text-xs font-medium text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl">
-                            يبدأ بتاريخ: {{ q.start_date }}
-                        </span>
-                    {% elif now_str > q.end_date %}
-                        <span class="text-xs font-medium text-rose-500 bg-rose-50 px-3 py-1.5 rounded-xl">
-                            انتهى موعد الاختبار
-                        </span>
-                    {% else %}
-                        <a href="/quiz/{{ q.id }}" 
-                           class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md shadow-blue-500/10 transition inline-block">
-                            بدء الاختبار الآن
-                        </a>
-                    {% endif %}
-                </div>
+      {% if quizzes %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for q in quizzes %}
+        <div class="p-5 rounded-2xl border {% if q.submitted_at %}border-emerald-200 bg-emerald-50/20{% else %}border-slate-200 bg-slate-50/40{% endif %} flex flex-col justify-between gap-4">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-xs font-bold text-slate-500 font-mono">⏱️ مدة الاختبار: {{ q.duration_minutes }} دقيقة</span>
+              {% if q.submitted_at %}
+                <span class="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">✓ تم التسليم</span>
+              {% else %}
+                <span class="text-[11px] font-bold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">متاح الآن</span>
+              {% endif %}
             </div>
+            <h4 class="font-bold text-slate-900 text-base mb-1">{{ q.title }}</h4>
+            <p class="text-xs text-slate-500">المعلم المشرف: {{ q.teacher_name }}</p>
+          </div>
+
+          <div class="pt-3 border-t border-slate-200/60 flex items-center justify-between">
+            {% if q.submitted_at %}
+              <div class="text-xs">
+                <span class="text-slate-400 block text-[10px]">درجتك المحصلة:</span>
+                <span class="font-bold text-indigo-700 text-sm">{{ q.score }} / {{ q.total_possible }} ({{ q.percentage }}%)</span>
+              </div>
+              <span class="text-xs font-bold text-emerald-700 bg-emerald-100/70 px-3 py-1.5 rounded-xl">تم اعتماد النتيجة</span>
             {% else %}
-            <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
-                <p class="text-slate-400 text-sm">لا توجد اختبارات متاحة لشعبتك حالياً.</p>
-            </div>
-            {% endfor %}
+              <div class="text-xs text-slate-400">لم يتم التقديم بعد</div>
+              <a href="/quiz/{{ q.id }}" class="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-indigo-600/20">
+                بدء الاختبار الآن ✍️
+              </a>
+            {% endif %}
+          </div>
         </div>
-    </main>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-12 text-slate-400">
+        <p class="text-sm font-bold">لا توجد اختبارات مجدولة لشعبتك ({{ user.class_name }}) في الوقت الحالي.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </main>
+
 </body>
 </html>
