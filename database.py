@@ -149,11 +149,9 @@ def seed_initial_data(conn):
         INSERT INTO questions (id, quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option, points)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, real_questions)
-
-    # 6. تسليم تجريبي سابق للطالب الأول لتغذية لوحة المعلم
-    cursor.execute("""
-        INSERT OR IGNORE INTO submissions (quiz_id, student_id, score, total_possible, percentage, submitted_at)
-        VALUES (1, 6, 17.5, 19.0, 92.1, '2026-09-23 22:30:00')
-    """)
+    
+# حذف التسليم التجريبي القديم لضمان واقعية الإحصائيات
+    cursor.execute("DELETE FROM submissions WHERE student_id = 6 AND quiz_id = 1")
+    conn.commit()
 
     conn.commit()
