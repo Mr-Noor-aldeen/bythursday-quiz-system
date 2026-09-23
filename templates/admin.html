@@ -21,7 +21,7 @@
       </div>
       
       <div class="flex items-center gap-3">
-        <div class="hidden sm:flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl">
+        <div class="flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl">
           <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
           <span class="text-xs font-bold text-indigo-900">نور (المديرة العامة)</span>
         </div>
@@ -32,6 +32,7 @@
 
   <main class="max-w-6xl mx-auto px-4 pt-6 space-y-6">
 
+    <!-- KPI Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
       <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
         <p class="text-xs font-bold text-slate-500 mb-1">إجمالي التسليمات</p>
@@ -58,7 +59,7 @@
           <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
             <span>👥 دليل شُعب المركز وميزة المعاينة السريعة (Reviewer Sandbox)</span>
           </h2>
-          <p class="text-xs text-slate-500 mt-0.5">انقر على زر المعاينة بجانب أي مستخدم لتقمص حسابه واختبار صلاحياته وعزل الشعب بنقرة واحدة دون كلمات سر.</p>
+          <p class="text-xs text-slate-500 mt-0.5">انقر على زر المعاينة بجانب أي مستخدم لاختبار الصلاحيات وعزل الشُعب بنقرة واحدة.</p>
         </div>
         <div class="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-lg self-start sm:self-auto">
           🔒 خاص بالإدارة والمراجعين
@@ -98,7 +99,7 @@
         </div>
       </div>
 
-      <!-- Cohort 10A Tab -->
+      <!-- Cohort 10A -->
       <div id="content-class10A" class="tab-content mt-4 hidden">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
           {% for s in students if s.class_name == '10A' %}
@@ -115,7 +116,7 @@
         </div>
       </div>
 
-      <!-- Cohort 10B Tab -->
+      <!-- Cohort 10B -->
       <div id="content-class10B" class="tab-content mt-4 hidden">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
           {% for s in students if s.class_name == '10B' %}
@@ -132,7 +133,7 @@
         </div>
       </div>
 
-      <!-- Cohort 11A Tab -->
+      <!-- Cohort 11A -->
       <div id="content-class11A" class="tab-content mt-4 hidden">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
           {% for s in students if s.class_name == '11A' %}
@@ -150,41 +151,45 @@
       </div>
     </div>
 
-    <!-- Live Submissions Ledger -->
-    <div class="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm">
-      <h2 class="text-sm font-bold text-slate-900 mb-4">سجل نتائج وتسليمات الطلاب الحية عبر المركز</h2>
-      {% if submissions %}
+    <!-- سجل تسليمات المركز العام -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+        <h3 class="font-bold text-slate-800 text-base">سجل تسليمات المركز العام</h3>
+        <span class="text-xs text-slate-400">محدث لحظياً</span>
+      </div>
       <div class="overflow-x-auto">
         <table class="w-full text-right text-xs">
-          <thead>
-            <tr class="border-b border-slate-200 text-slate-400">
-              <th class="pb-3 font-medium">اسم الطالب</th>
-              <th class="pb-3 font-medium">الشعبة</th>
-              <th class="pb-3 font-medium">عنوان الاختبار</th>
-              <th class="pb-3 font-medium">الدرجة</th>
-              <th class="pb-3 font-medium">النسبة</th>
-              <th class="pb-3 font-medium">تاريخ التسليم</th>
+          <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+            <tr>
+              <th class="p-4">اسم الطالب</th>
+              <th class="p-4">الشعبة</th>
+              <th class="p-4">عنوان الاختبار</th>
+              <th class="p-4">الدرجة</th>
+              <th class="p-4">النسبة</th>
+              <th class="p-4">تاريخ التسليم</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100">
-            {% for s in submissions %}
-            <tr class="hover:bg-slate-50">
-              <td class="py-3 font-bold text-slate-800">{{ s.student_name }}</td>
-              <td class="py-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono font-bold">{{ s.class_name }}</span></td>
-              <td class="py-3 text-slate-600">{{ s.quiz_title }}</td>
-              <td class="py-3 font-bold text-indigo-600">{{ s.score }} / {{ s.total_possible }}</td>
-              <td class="py-3 font-bold {% if s.percentage >= 50 %}text-emerald-600{% else %}text-rose-600{% endif %}">{{ s.percentage }}%</td>
-              <td class="py-3 font-mono text-slate-400 text-[11px]">{{ s.submitted_at }}</td>
-            </tr>
-            {% endfor %}
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            {% if submissions %}
+              {% for s in submissions %}
+              <tr class="hover:bg-slate-50/60 transition">
+                <td class="p-4 font-bold text-slate-900">{{ s.student_name }}</td>
+                <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-slate-600 font-mono font-bold">{{ s.class_name }}</span></td>
+                <td class="p-4 text-slate-600">{{ s.quiz_title }}</td>
+                <td class="p-4 font-bold text-indigo-600">{{ s.score }} / {{ s.total_possible }}</td>
+                <td class="p-4 font-bold {% if s.percentage >= 50 %}text-emerald-600{% else %}text-rose-600{% endif %}">{{ s.percentage }}%</td>
+                <td class="p-4 text-slate-400 font-mono">{{ s.submitted_at }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="6" class="p-8 text-center text-slate-400">لم يقم أي طالب بتقديم الاختبار بعد.</td>
+              </tr>
+            {% endif %}
           </tbody>
         </table>
       </div>
-      {% else %}
-      <p class="text-xs text-slate-400 py-6 text-center">لا توجد تسليمات مسجلة حتى الآن.</p>
-      {% endif %}
     </div>
-
   </main>
 
   <script>

@@ -274,14 +274,13 @@ def quiz_result(request: Request, quiz_id: int):
     })
 
 # 6. لوحة تحكم المعلم والإدارة
-@app.get("/teacher/dashboard")
-@app.get("/admin/dashboard")
 @app.get("/admin")
-def unified_staff_dashboard(request: Request):
+@app.get("/admin/dashboard")
+def admin_dashboard(request: Request):
     user = get_current_user(request)
-    if not user or user["role"] not in ["admin", "teacher"]:
+    if not user or user["role"] != "admin":
         return RedirectResponse(url="/login", status_code=303)
-
+    
     conn = database.get_db()
     cursor = conn.cursor()
     cursor.execute('''
@@ -297,14 +296,14 @@ def unified_staff_dashboard(request: Request):
     cursor.execute("SELECT AVG(percentage) as avg_p FROM submissions")
     row = cursor.fetchone()
     avg_score = round(row["avg_p"] or 0, 1)
-
+    
     cursor.execute("SELECT * FROM users WHERE role = 'teacher' ORDER BY name ASC")
     teachers = cursor.fetchall()
     cursor.execute("SELECT * FROM users WHERE role = 'student' ORDER BY class_name, name ASC")
     students = cursor.fetchall()
     conn.close()
-
-    return templates.TemplateResponse("teacher_dashboard.html", {
+    
+    return templates.TemplateResponse("admin_dashboard.html", {
         "request": request,
         "user": user,
         "submissions": subs,
@@ -312,6 +311,47 @@ def unified_staff_dashboard(request: Request):
         "avg_score": avg_score,
         "teachers": teachers,
         "students": students
+    })
+
+@app.get("/teacher/dashboard")
+def teacher_dashboard(request: Request):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    if user["role"] not in ["teacher", "admin"]:
+        return RedirectResponse(url="/login", status_code=303)
+    
+    conn = database.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM quizzes WHERE teacher_id = ?", (user["id"],))
+    quizzes = cursor.fetchall()
+    
+    cursor.execute('''
+        SELECT s.*, u.name as student_name, u.class_name, q.title as quiz_title
+        FROM submissions s
+        JOIN users u ON s.student_id = u.id
+        JOIN quizzes q ON s.quiz_id = q.id
+        WHERE q.teacher_id = ?
+        ORDER BY s.submitted_at DESC
+    ''', (user["id"],))
+    subs = cursor.fetchall()
+    
+    cursor.execute('''
+        SELECT AVG(s.percentage) as avg_p 
+        FROM submissions s 
+        JOIN quizzes q ON s.quiz_id = q.id 
+        WHERE q.teacher_id = ?
+    ''', (user["id"],))
+    row = cursor.fetchone()
+    avg_score = round(row["avg_p"] or 0, 1)
+    conn.close()
+    
+    return templates.TemplateResponse("teacher_dashboard.html", {
+        "request": request,
+        "user": user,
+        "quizzes": quizzes,
+        "submissions": subs,
+        "avg_score": avg_score
     })
 
 @app.get("/admin/impersonate/{target_user_id}")

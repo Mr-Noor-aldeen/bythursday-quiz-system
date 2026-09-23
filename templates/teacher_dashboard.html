@@ -3,158 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مركز نور التعليمي — لوحة المتابعة العامة</title>
+  <title>مركز نور التعليمي — لوحة متابعة المعلم</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>body { font-family: 'Tajawal', sans-serif; }</style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 antialiased pb-16">
 
-  <!-- شريط التنقل العلوي الموحد -->
+  {% if user.role == 'admin' %}
+  <!-- شريط العودة للإدارة يظهر حصراً إذا قامت المديرة بتقمص حساب المعلم للمعاينة -->
+  <div class="bg-indigo-900 text-white px-4 py-2.5 flex items-center justify-between text-xs font-bold shadow-inner">
+    <span>👁️ أنت الآن في وضع المعاينة كمعلم: {{ user.name }}</span>
+    <a href="/admin/dashboard" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded-lg transition">العودة للوحة الإدارة العامة ↗</a>
+  </div>
+  {% endif %}
+
+  <!-- Navbar المعلم القياسي -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
       <div class="flex items-center space-x-3 space-x-reverse">
-        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-indigo-600/20">
-          ن
-        </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg">م</div>
         <div>
           <h2 class="text-sm font-bold text-slate-900">{{ user.name }}</h2>
-          <span class="text-xs bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
-            {% if user.role == 'admin' %}مديرة النظام العام{% else %}معلم معتمد{% endif %}
-          </span>
+          <span class="text-xs bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded-full">معلم معتمد</span>
         </div>
       </div>
-      <a href="/logout" class="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200 px-3 py-2 rounded-xl transition">
-        تسجيل الخروج
-      </a>
+      <a href="/logout" class="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-3 py-2 rounded-xl transition">تسجيل الخروج</a>
     </div>
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-
-    <!-- شريط الإحصائيات السريعة -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-bold text-slate-400 block mb-1">إجمالي التسليمات</span>
-        <span class="text-2xl font-extrabold text-indigo-600">{{ total_submissions }}</span>
+    <!-- إحصائيات المعلم -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <span class="text-xs font-bold text-slate-400 block mb-1">تسليمات اختباراتك</span>
+        <span class="text-2xl font-extrabold text-slate-800">{{ submissions|length }}</span>
       </div>
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-bold text-slate-400 block mb-1">متوسط الدرجات العام</span>
-        <span class="text-2xl font-extrabold text-emerald-600">{{ avg_score }}%</span>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <span class="text-xs font-bold text-slate-400 block mb-1">متوسط درجات طلابك</span>
+        <span class="text-2xl font-extrabold text-blue-600">{{ avg_score }}%</span>
       </div>
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-bold text-slate-400 block mb-1">طاقم المعلمين</span>
-        <span class="text-2xl font-extrabold text-blue-600">{{ teachers|length if teachers else 4 }} معلمين</span>
-      </div>
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <span class="text-xs font-bold text-slate-400 block mb-1">إجمالي الطلاب المسجلين</span>
-        <span class="text-2xl font-extrabold text-amber-600">{{ students|length if students else 60 }} طالباً</span>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <span class="text-xs font-bold text-slate-400 block mb-1">اختباراتك المفعلة</span>
+        <span class="text-2xl font-extrabold text-emerald-600">{{ quizzes|length }}</span>
       </div>
     </div>
 
-    <!-- صندوق الفحص والمعاينة السريعة (Reviewer Sandbox) مدمج مباشرة -->
-    <div class="bg-white border-2 border-indigo-300 rounded-2xl p-5 md:p-6 shadow-sm overflow-hidden">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
-        <div>
-          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-            <span>👥 دليل شُعب المركز وميزة المعاينة السريعة (Reviewer Sandbox)</span>
-          </h2>
-          <p class="text-xs text-slate-500 mt-0.5">انقر على زر المعاينة بجانب أي مستخدم لتقمص حسابه واختبار عزل الشُعب والصلاحيات فوراً دون كلمات سر.</p>
-        </div>
-        <div class="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-lg self-start sm:self-auto">
-          🔒 بيئة الفحص والتقييم السريع
-        </div>
-      </div>
-
-      <!-- تبويبات الشُعب والمعلمين -->
-      <div class="flex items-center gap-2 mt-4 pb-2 overflow-x-auto border-b border-slate-200">
-        <button onclick="switchTab('teachers')" id="tab-teachers" class="tab-btn px-4 py-2 text-xs font-bold rounded-xl transition bg-indigo-600 text-white">
-          طاقم المعلمين ({{ teachers|length if teachers else 4 }})
-        </button>
-        <button onclick="switchTab('class10A')" id="tab-class10A" class="tab-btn px-4 py-2 text-xs font-bold rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200">
-          الشعبة 10A (20 طالب)
-        </button>
-        <button onclick="switchTab('class10B')" id="tab-class10B" class="tab-btn px-4 py-2 text-xs font-bold rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200">
-          الشعبة 10B (20 طالب)
-        </button>
-        <button onclick="switchTab('class11A')" id="tab-class11A" class="tab-btn px-4 py-2 text-xs font-bold rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200">
-          الشعبة 11A (20 طالب)
-        </button>
-      </div>
-
-      <!-- قائمة المعلمين -->
-      <div id="content-teachers" class="tab-content mt-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {% for t in teachers %}
-          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between gap-3">
-            <div>
-              <p class="font-bold text-sm text-slate-900">{{ t.name }}</p>
-              <p class="text-xs text-slate-500 font-mono mt-0.5">{{ t.username }}</p>
-            </div>
-            <a href="/admin/impersonate/{{ t.id }}" class="w-full text-center py-2 px-3 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-indigo-700 text-xs font-bold rounded-lg transition shadow-xs">
-              معاينة كمعلم ↗
-            </a>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- الشعبة 10A -->
-      <div id="content-class10A" class="tab-content mt-4 hidden">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
-          {% for s in students if s.class_name == '10A' %}
-          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-2">
-            <div class="min-w-0">
-              <p class="font-bold text-xs text-slate-900 truncate">{{ s.name }}</p>
-              <span class="text-[10px] text-slate-400 font-mono">{{ s.username }}</span>
-            </div>
-            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition">
-              معاينة ↗
-            </a>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- الشعبة 10B -->
-      <div id="content-class10B" class="tab-content mt-4 hidden">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
-          {% for s in students if s.class_name == '10B' %}
-          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-2">
-            <div class="min-w-0">
-              <p class="font-bold text-xs text-slate-900 truncate">{{ s.name }}</p>
-              <span class="text-[10px] text-slate-400 font-mono">{{ s.username }}</span>
-            </div>
-            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition">
-              معاينة ↗
-            </a>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- الشعبة 11A -->
-      <div id="content-class11A" class="tab-content mt-4 hidden">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
-          {% for s in students if s.class_name == '11A' %}
-          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-2">
-            <div class="min-w-0">
-              <p class="font-bold text-xs text-slate-900 truncate">{{ s.name }}</p>
-              <span class="text-[10px] text-slate-400 font-mono">{{ s.username }}</span>
-            </div>
-            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg transition">
-              معاينة ↗
-            </a>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-
-    <!-- جدول نتائج وتسليمات الطلاب الحية (عمر الطراونة) -->
+    <!-- جدول نتائج طلاب هذا المعلم فقط -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-        <h3 class="font-bold text-slate-800 text-base">سجل نتائج الطلاب</h3>
+        <h3 class="font-bold text-slate-800 text-base">سجل نتائج طلابك</h3>
         <span class="text-xs text-slate-400">محدث لحظياً</span>
       </div>
       <div class="overflow-x-auto">
@@ -174,7 +72,7 @@
               {% for s in submissions %}
               <tr class="hover:bg-slate-50/60 transition">
                 <td class="p-4 font-bold text-slate-900">{{ s.student_name }}</td>
-                <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-slate-600 font-mono font-bold">{{ s.class_name }}</span></td>
+                <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-slate-600 font-mono">{{ s.class_name }}</span></td>
                 <td class="p-4 text-slate-600">{{ s.quiz_title }}</td>
                 <td class="p-4 font-bold text-indigo-600">{{ s.score }} / {{ s.total_possible }}</td>
                 <td class="p-4 font-bold {% if s.percentage >= 50 %}text-emerald-600{% else %}text-rose-600{% endif %}">{{ s.percentage }}%</td>
@@ -183,29 +81,14 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="6" class="p-8 text-center text-slate-400">لم يقم أي طالب بتقديم الاختبار بعد.</td>
+                <td colspan="6" class="p-8 text-center text-slate-400">لا توجد تسليمات مسجلة لاختباراتك حتى الآن.</td>
               </tr>
             {% endif %}
           </tbody>
         </table>
       </div>
     </div>
-
   </main>
 
-  <script>
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-indigo-600', 'text-white');
-        btn.classList.add('bg-slate-100', 'text-slate-600');
-      });
-
-      document.getElementById('content-' + tabId).classList.remove('hidden');
-      const activeBtn = document.getElementById('tab-' + tabId);
-      activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
-      activeBtn.classList.add('bg-indigo-600', 'text-white');
-    }
-  </script>
 </body>
 </html>
