@@ -8,6 +8,28 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database import get_db
 
+
+# Universal backward & forward compatibility wrapper for Jinja2Templates
+from starlette.templating import Jinja2Templates
+
+_real_template_response = Jinja2Templates.TemplateResponse
+
+def _compat_template_response(self, *args, **kwargs):
+    if args and isinstance(args[0], str):
+        name = args[0]
+        context = args[1] if len(args) > 1 else kwargs.get("context", {})
+        request = context.get("request") if isinstance(context, dict) else kwargs.get("request")
+        clean_kwargs = {k: v for k, v in kwargs.items() if k not in ("context", "name", "request")}
+        if request is not None:
+            try:
+                return _real_template_response(self, request, name, context, **clean_kwargs)
+            except TypeError:
+                pass
+        return _real_template_response(self, name, context, **clean_kwargs)
+    return _real_template_response(self, *args, **kwargs)
+
+Jinja2Templates.TemplateResponse = _compat_template_response
+
 app = FastAPI(title="Amman Tutoring Center Quiz Engine")
 
 # مسار مطلق يضمن وصول خوادم Vercel للقوالب دون أي خطأ
