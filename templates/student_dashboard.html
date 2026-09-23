@@ -11,7 +11,7 @@
 <body class="bg-slate-50 min-h-screen text-slate-800 antialiased pb-16">
 
   {% if request.cookies.get('reviewer_admin') == '1' %}
-  <!-- شريط العودة للمديرة والمراجعين في لوحة الطالب -->
+  <!-- شريط العودة للمديرة والمراجعين -->
   <div class="bg-indigo-900 text-white px-4 py-2.5 flex items-center justify-between text-xs font-bold sticky top-0 z-50 shadow-md">
     <div class="flex items-center gap-2">
       <span class="animate-pulse">👁️</span>
@@ -45,7 +45,7 @@
       <div class="border-b border-slate-100 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 class="font-extrabold text-slate-900 text-lg">📋 جدول الاختبارات الأكاديمية لشعبتك ({{ user.class_name }})</h3>
-          <p class="text-xs text-slate-500 mt-1">الاختبارات المفعلة من قِبل مدرسي شعبتك</p>
+          <p class="text-xs text-slate-500 mt-1">الاختبارات المفعلة والمقررة لشعبتك</p>
         </div>
         <span class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl self-start sm:self-auto font-mono">
           الشعبة: {{ user.class_name }}
@@ -55,14 +55,18 @@
       {% if quizzes %}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% for q in quizzes %}
-        <div class="p-5 rounded-2xl border {% if q.submitted_at %}border-emerald-200 bg-emerald-50/20{% else %}border-slate-200 bg-slate-50/40{% endif %} flex flex-col justify-between gap-4">
+        <div class="p-5 rounded-2xl border {% if q.is_submitted %}border-emerald-200 bg-emerald-50/25{% else %}border-slate-200 bg-slate-50/40{% endif %} flex flex-col justify-between gap-4 transition">
           <div>
             <div class="flex items-center justify-between gap-2 mb-2">
               <span class="text-xs font-bold text-slate-500 font-mono">⏱️ مدة الاختبار: {{ q.duration_minutes }} دقيقة</span>
-              {% if q.submitted_at %}
-                <span class="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">✓ تم التسليم</span>
+              {% if q.is_submitted %}
+                <span class="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-3 py-0.5 rounded-full flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> تم التسليم
+                </span>
               {% else %}
-                <span class="text-[11px] font-bold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">متاح الآن</span>
+                <span class="text-[11px] font-bold bg-blue-100 text-blue-800 px-3 py-0.5 rounded-full">
+                  متاح الآن
+                </span>
               {% endif %}
             </div>
             <h4 class="font-bold text-slate-900 text-base mb-1">{{ q.title }}</h4>
@@ -70,15 +74,18 @@
           </div>
 
           <div class="pt-3 border-t border-slate-200/60 flex items-center justify-between">
-            {% if q.submitted_at %}
+            {% if q.is_submitted %}
               <div class="text-xs">
-                <span class="text-slate-400 block text-[10px]">درجتك المحصلة:</span>
-                <span class="font-bold text-indigo-700 text-sm">{{ q.score }} / {{ q.total_possible }} ({{ q.percentage }}%)</span>
+                <span class="text-slate-400 block text-[10px]">الدرجة المعتمدة:</span>
+                <span class="font-extrabold text-slate-900 text-sm font-mono">{{ q.score }} / {{ q.total_possible }}</span>
+                <span class="font-bold {% if q.percentage >= 50 %}text-emerald-600{% else %}text-rose-600{% endif %} text-xs font-mono mr-1">({{ q.percentage }}%)</span>
               </div>
-              <span class="text-xs font-bold text-emerald-700 bg-emerald-100/70 px-3 py-1.5 rounded-xl">تم اعتماد النتيجة</span>
+              <span class="text-xs font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200 px-3 py-1.5 rounded-xl shadow-2xs">
+                ✓ تم توثيق النتيجة
+              </span>
             {% else %}
-              <div class="text-xs text-slate-400">لم يتم التقديم بعد</div>
-              <a href="/quiz/{{ q.id }}" class="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-indigo-600/20">
+              <div class="text-xs text-slate-400 font-medium">لم يتم التقديم بعد</div>
+              <a href="/quiz/{{ q.id }}" class="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-indigo-600/20">
                 بدء الاختبار الآن ✍️
               </a>
             {% endif %}
@@ -88,7 +95,7 @@
       </div>
       {% else %}
       <div class="text-center py-12 text-slate-400">
-        <p class="text-sm font-bold">لا توجد اختبارات مجدولة لشعبتك ({{ user.class_name }}) في الوقت الحالي.</p>
+        <p class="text-sm font-bold">لا توجد اختبارات مقررة لشعبتك ({{ user.class_name }}) في الوقت الحالي.</p>
       </div>
       {% endif %}
     </div>

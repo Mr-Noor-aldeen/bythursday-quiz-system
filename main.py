@@ -104,37 +104,58 @@ def logout():
     return res
 
 # 2. لوحة تحكم الطالب
-@app.get("/student/dashboard", response_class=HTMLResponse)
+@app.get("/student/dashboard")
 def student_dashboard(request: Request):
     user = get_current_user(request)
     if not user or user["role"] != "student":
-        return RedirectResponse(url="/login", status_code=302)
+        return RedirectResponse(url="/login", status_code=303)
 
-    conn = get_db()
+    conn = database.get_db()
     cursor = conn.cursor()
-
+    
+    # 1. جلب اختبارات شعبة الطالب
     cursor.execute("""
-        SELECT q.*, u.name as teacher_name,
-               (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count,
-               s.id as submission_id, s.score, s.total_possible, s.percentage
+        SELECT q.*, u.name as teacher_name
         FROM quizzes q
         JOIN users u ON q.teacher_id = u.id
-        LEFT JOIN submissions s ON s.quiz_id = q.id AND s.student_id = ?
         WHERE q.class_name = ?
-        ORDER BY q.id DESC
-    """, (user["id"], user["class_name"]))
-    quizzes = cursor.fetchall()
-    conn.close()
+        ORDER BY q.id ASC
+    """, (user["class_name"],))
+    quiz_rows = cursor.fetchall()
 
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    # 2. فحص تسليم كل اختبار بصورة مباشرة ومستقلة 100%
+    quizzes = []
+    for q in quiz_rows:
+        item = dict(q)
+        cursor.execute("""
+            SELECT score, total_possible, percentage, submitted_at
+            FROM submissions
+            WHERE quiz_id = ? AND student_id = ?
+            ORDER BY id DESC LIMIT 1
+        """, (item["id"], user["id"]))
+        sub = cursor.fetchone()
+        
+        if sub:
+            item["is_submitted"] = True
+            item["score"] = sub["score"]
+            item["total_possible"] = sub["total_possible"]
+            item["percentage"] = sub["percentage"]
+            item["submitted_at"] = sub["submitted_at"]
+        else:
+            item["is_submitted"] = False
+            item["score"] = None
+            item["total_possible"] = None
+            item["percentage"] = None
+            item["submitted_at"] = None
+            
+        quizzes.append(item)
+
+    conn.close()
     return templates.TemplateResponse("student_dashboard.html", {
         "request": request,
         "user": user,
-        "quizzes": quizzes,
-        "now_str": now_str
+        "quizzes": quizzes
     })
-
-# 3. واجهة تقديم الاختبار
 @app.get("/quiz/{quiz_id}", response_class=HTMLResponse)
 def take_quiz(request: Request, quiz_id: int):
     user = get_current_user(request)
