@@ -1,54 +1,50 @@
 # Amman Tutoring Center Quiz Engine
 
-A clean, mobile-first assessment system built for **Amman Tutoring Center (مركز نور التعليمي)** to replace paper quizzes with timed, auto-graded digital assessments.
+A clean, responsive, and robust web-based assessment platform built for **Amman Tutoring Center (مركز نور التعليمي)** to replace paper quizzes with timed, auto-graded digital assessments.
 
-Supports multi-role access (Admin, Teachers, Students), class-isolated quizzes, configurable negative marking (-0.5 penalties), and single-submission enforcement.
+Designed with a mobile-first approach, the system supports multi-role access (Admin, Teachers, Students), class-isolated quizzes, configurable negative marking (-0.5 penalties), and strict single-submission enforcement.
 
 ---
 
-## 🚀 Quickstart (One Command to Run)
+## 🚀 One-Command Launch (Zero-Config / Clean Machine)
 
-The application starts immediately on any clean machine. The SQLite database self-initializes and seeds all sample data on first launch.
+The application starts immediately on any clean machine. The startup runner automatically detects and installs any missing dependencies, initializes the SQLite database schema, and seeds all sample data before launching.
 
-### 1. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Start the Server (Single Command)
+### Single Command to Run:
 
 ```bash
-uvicorn main:app --reload
+python run.py
 ```
 
-Open [**http://localhost:8000**](http://localhost:8000) in your browser or phone.
+Open [**http://127.0.0.1:8000**](http://127.0.0.1:8000) in your browser or phone.
 
-### 3. Run Automated Tests
+## 🧪 Run Automated Tests (Single Command)
+
+To execute the test suite verifying data integrity, negative marking rules, single-submission constraints, and authentication:
 
 ```bash
-pytest
+python run.py --test
 ```
 
-*Executes all test suites (`test_quiz.py`) verifying schema integrity, negative marking edge cases, duplicate submission locks, and endpoint authentication.*
+*(Or run `pytest` directly)*.
 
 ## 👥 Seeded Users & Login Credentials
 
 All sample data described in the client brief is automatically seeded on startup:
 
-| **Role**                    | **Username**                 | **Password** | **Notes / Scope**                       |
-| --------------------------- | ---------------------------- | ------------ | --------------------------------------- |
-| **Center Director (Admin)** | `nour_admin`                 | `admin123`   | Center-wide overview and global metrics |
-| **Teacher (Math)**          | `t_ahmad`                    | `teacher123` | Class 10A Mathematics                   |
-| **Teacher (Physics)**       | `t_sarah`                    | `teacher123` | Physics curriculum                      |
-| **Teacher (Chemistry)**     | `t_khaled`                   | `teacher123` | Chemistry curriculum                    |
-| **Teacher (Biology)**       | `t_reem`                     | `teacher123` | Biology curriculum                      |
-| **Student (Class 10A)**     | `std_10a_01` to `std_10a_20` | `student123` | Class 10A (20 students)                 |
-| **Student (Class 10B)**     | `std_10b_01` to `std_10b_20` | `student123` | Class 10B (20 students)                 |
-| **Student (Class 11A)**     | `std_11a_01` to `std_11a_20` | `student123` | Class 11A (20 students)                 |
+| **Role**                    | **Username**                 | **Password** | **Scope / Description**                                           |
+| --------------------------- | ---------------------------- | ------------ | ----------------------------------------------------------------- |
+| **Center Director (Admin)** | `nour_admin`                 | `admin123`   | Global overview across all teachers, classes, and center averages |
+| **Teacher (Math)**          | `t_ahmad`                    | `teacher123` | Class 10A Mathematics                                             |
+| **Teacher (Physics)**       | `t_sarah`                    | `teacher123` | Physics curriculum                                                |
+| **Teacher (Chemistry)**     | `t_khaled`                   | `teacher123` | Chemistry curriculum                                              |
+| **Teacher (Biology)**       | `t_reem`                     | `teacher123` | Biology curriculum                                                |
+| **Student (Class 10A)**     | `std_10a_01` to `std_10a_20` | `student123` | Class 10A (20 students)                                           |
+| **Student (Class 10B)**     | `std_10b_01` to `std_10b_20` | `student123` | Class 10B (20 students)                                           |
+| **Student (Class 11A)**     | `std_11a_01` to `std_11a_20` | `student123` | Class 11A (20 students)                                           |
 
 ## 🌐 Live Production Deployment
 
-The project is deployed and live on Vercel:
+The application is deployed and live on Vercel:
 
 [**https://bythursday-quiz-system.vercel.app**](https://bythursday-quiz-system.vercel.app)
