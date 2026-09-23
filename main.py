@@ -1,3 +1,4 @@
+import database
 import os
 import json
 import sqlite3
@@ -333,3 +334,41 @@ def admin_impersonate(request: Request, target_user_id: int):
     response = RedirectResponse(url=redirect_url, status_code=303)
     response.set_cookie(key="user_id", value=str(target["id"]))
     return response
+
+@app.get("/admin")
+@app.get("/admin/dashboard")
+def admin_dashboard_view(request: Request):
+    user = get_current_user(request)
+    if not user or user["role"] != "admin":
+        return RedirectResponse(url="/login", status_code=303)
+    
+    conn = database.get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT s.*, u.name as student_name, u.class_name, q.title as quiz_title
+        FROM submissions s
+        JOIN users u ON s.student_id = u.id
+        JOIN quizzes q ON s.quiz_id = q.id
+        ORDER BY s.submitted_at DESC
+    ''')
+    subs = cursor.fetchall()
+    cursor.execute("SELECT COUNT(*) as total FROM submissions")
+    total_subs = cursor.fetchone()["total"]
+    cursor.execute("SELECT AVG(percentage) as avg_p FROM submissions")
+    row = cursor.fetchone()
+    avg_score = round(row["avg_p"] or 0, 1)
+    
+    cursor.execute("SELECT * FROM users WHERE role = 'teacher' ORDER BY name ASC")
+    teachers = cursor.fetchall()
+    cursor.execute("SELECT * FROM users WHERE role = 'student' ORDER BY class_name, name ASC")
+    students = cursor.fetchall()
+    conn.close()
+    
+    return templates.TemplateResponse("admin_dashboard.html", {
+        "request": request,
+        "submissions": subs,
+        "total_submissions": total_subs,
+        "avg_score": avg_score,
+        "teachers": teachers,
+        "students": students
+    })
