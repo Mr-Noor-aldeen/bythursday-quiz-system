@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مركز نور التعليمي - تسجيل الدخول</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Tajawal', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl mb-4 font-bold text-2xl">
+                ن
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800">مركز نور التعليمي</h1>
+            <p class="text-sm text-slate-500 mt-1">منصة الاختبارات الإلكترونية الأسبوعية</p>
+        </div>
+
+        {% if error %}
+        <div class="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl font-medium">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/login" method="POST" class="space-y-5">
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-2">اسم المستخدم</label>
+                <input type="text" name="username" required 
+                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition text-sm text-slate-800"
+                       placeholder="مثال: std_10a_01 أو t_ahmad">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-2">كلمة المرور</label>
+                <input type="password" name="password" required 
+                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition text-sm text-slate-800"
+                       placeholder="••••••••">
+            </div>
+
+            <button type="submit" 
+                    class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition">
+                تسجيل الدخول
+            </button>
+        </form>
+
+        <!-- صندوق بيانات تجريبية للمراجعين -->
+        <div class="mt-8 pt-6 border-t border-slate-100 text-xs text-slate-500">
+            <p class="font-bold text-slate-700 mb-2">بيانات تجريبية سريعة للفحص:</p>
+            <div class="space-y-1 bg-slate-50 p-3 rounded-lg border border-slate-100 font-mono">
+                <div>طالب: <span class="text-blue-600">std_10a_01</span> | كلمة المرور: <span class="text-slate-700">student123</span></div>
+                <div>معلم: <span class="text-blue-600">t_ahmad</span> | كلمة المرور: <span class="text-slate-700">teacher123</span></div>
+                <div>إدارة: <span class="text-blue-600">nour_admin</span> | كلمة المرور: <span class="text-slate-700">admin123</span></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نتيجة الاختبار - مركز نور التعليمي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Tajawal', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-slate-100 text-center">
+        <div class="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 
+                    {% if submission.percentage >= 50 %}bg-emerald-100 text-emerald-600{% else %}bg-rose-100 text-rose-600{% endif %}">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </div>
+
+        <h1 class="text-xl font-bold text-slate-800 mb-1">{{ quiz.title }}</h1>
+        <p class="text-xs text-slate-400 mb-6">تم تسليم الاختبار وتوثيقه بنجاح</p>
+
+        <div class="bg-slate-50 rounded-2xl p-6 mb-6 border border-slate-100 space-y-3">
+            <div class="text-3xl font-extrabold {% if submission.percentage >= 50 %}text-emerald-600{% else %}text-rose-600{% endif %}">
+                {{ submission.score }} <span class="text-base font-normal text-slate-400">/ {{ submission.total_possible }}</span>
+            </div>
+            <div class="text-xs font-bold text-slate-500">
+                النسبة المئوية: <span class="text-slate-800">{{ submission.percentage }}%</span>
+            </div>
+            <div class="text-[11px] text-slate-400">
+                وقت التسليم: {{ submission.submitted_at }}
+            </div>
+        </div>
+
+        <a href="/student/dashboard" 
+           class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-sm transition inline-block">
+            العودة للوحة الاختبارات
+        </a>
+    </div>
+</body>
+</html>
