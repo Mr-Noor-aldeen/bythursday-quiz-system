@@ -34,7 +34,7 @@
       <span class="text-xl">⚠️</span>
       <div class="text-xs md:text-sm leading-relaxed">
         <strong>تنبيه علامات سالبة:</strong> يخصم <strong>({{ quiz.negative_mark_value }})</strong> نقطة عن كل إجابة خاطئة. 
-        <span class="block mt-0.5 text-amber-700">الأسئلة المتروكة فارغة لا تخصم نقاطاً (تحصل فيها على صفر).</span>
+        <span class="block mt-0.5 text-amber-700">الأسئلة المتروكة فارغة لا تخصم نقاطاً. يمكنك مسح إجابتك أو النقر عليها مجدداً لإلغائها.</span>
       </div>
     </div>
     {% endif %}
@@ -45,9 +45,18 @@
       <div class="space-y-6">
         {% for q in questions %}
         <div class="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm">
+          
+          <!-- رأس السؤال مع زر إلغاء الاختيار -->
           <div class="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
-            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">السؤال {{ loop.index }} من {{ questions|length }}</span>
-            <span class="text-xs font-medium text-slate-400">{{ q.points }} نقطة</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">السؤال {{ loop.index }} من {{ questions|length }}</span>
+              <span class="text-xs font-medium text-slate-400">{{ q.points }} نقطة</span>
+            </div>
+            
+            <!-- زر مسح الاختيار لتجنب العلامة السالبة -->
+            <button type="button" onclick="clearAnswer('q_{{ q.id }}')" class="text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 font-bold px-2 py-1 rounded-lg transition cursor-pointer">
+              إلغاء الاختيار ✕
+            </button>
           </div>
 
           <p class="text-base md:text-lg font-bold text-slate-900 mb-4 leading-relaxed">{{ q.question_text }}</p>
@@ -75,7 +84,29 @@
   </main>
 
   <script>
-    // --- 1. إدارة العداد التنازلي والتسليم التلقائي ---
+    // --- 1. ميزة إلغاء التحديد بالنقر المزدوج أو بالزر ---
+    function clearAnswer(radioName) {
+      const radios = document.querySelectorAll(`input[name="${radioName}"]`);
+      radios.forEach(r => {
+        r.checked = false;
+        r.dataset.wasChecked = "false";
+      });
+    }
+
+    // السماح بإلغاء التحديد بالنقر على نفس الخيار مجدداً
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+      radio.addEventListener('click', function() {
+        if (this.dataset.wasChecked === "true") {
+          this.checked = false;
+          this.dataset.wasChecked = "false";
+        } else {
+          document.querySelectorAll(`input[name="${this.name}"]`).forEach(r => r.dataset.wasChecked = "false");
+          this.dataset.wasChecked = "true";
+        }
+      });
+    });
+
+    // --- 2. إدارة العداد التنازلي والتسليم التلقائي ---
     const durationMinutes = {{ quiz.duration_minutes or 20 }};
     let remainingSeconds = durationMinutes * 60;
     let isAutoSubmitting = false;
@@ -105,7 +136,7 @@
       }
     }, 1000);
 
-    // --- 2. التحقق من الأسئلة الفارغة وتأكيد التسليم اليدوي ---
+    // --- 3. التحقق من الأسئلة الفارغة وتأكيد التسليم ---
     function handleFormSubmit(e) {
       if (isAutoSubmitting) return true;
 
@@ -121,7 +152,7 @@
       const unansweredCount = totalQuestions - answeredCount;
 
       if (unansweredCount > 0) {
-        const confirmMsg = `تنبيه:\nلديك (${unansweredCount}) أسئلة لم تقم بالإجابة عليها!\n\nوفق نظام العلامات السالبة، الأسئلة المتروكة فارغة لا تخصم منك درجات (تحصل فيها على 0).\n\nهل أنت متأكد من رغبتك في تسليم الاختبار الآن؟`;
+        const confirmMsg = `تنبيه:\nلديك (${unansweredCount}) أسئلة لم تقم بالإجابة عليها!\n\nوفق نظام العلامات السالبة، الأسئلة المتروكة فارغة لا تخصم درجات (تحصل فيها على 0).\n\nهل أنت متأكد من تسليم الاختبار الآن؟`;
         if (!confirm(confirmMsg)) {
           e.preventDefault();
           return false;
@@ -133,7 +164,6 @@
         }
       }
 
-      // تعطيل الزر لتجنب النقر المزدوج السريع
       document.getElementById("submitBtn").disabled = true;
       document.getElementById("submitBtn").textContent = "جاري تسليم الإجابات...";
       return true;
