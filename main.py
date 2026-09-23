@@ -1,26 +1,35 @@
+import os
+import json
+import sqlite3
+from pathlib import Path
+from datetime import datetime
 from fastapi import FastAPI, Request, Form, HTTPException, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from datetime import datetime
-import json
 from database import get_db
 
 app = FastAPI(title="Amman Tutoring Center Quiz Engine")
-templates = Jinja2Templates(directory="templates")
+
+# مسار مطلق يضمن وصول خوادم Vercel للقوالب دون أي خطأ
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # --- دوال التحقق من الجلسات (Session Helpers) ---
 
 def get_current_user(request: Request):
-    """التحقق من جلسة المستخدم عبر الكوكيز"""
+    """التحقق الآمن من جلسة المستخدم عبر الكوكيز"""
     user_id = request.cookies.get("user_id")
     if not user_id:
         return None
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-    user = cursor.fetchone()
-    conn.close()
-    return user
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        conn.close()
+        return user
+    except Exception:
+        return None
 
 # --- المسارات الرئيسية (Routes) ---
 
@@ -61,17 +70,17 @@ def login_submit(
         }, status_code=400)
 
     target_url = "/student/dashboard" if user["role"] == "student" else "/teacher/dashboard"
-    res = RedirectResponse(url=target_url, status_code=302)
-    res.set_cookie(key="user_id", value=str(user["id"]), httponly=True)
+    res = RedirectResponse(url=target_url, status_code=303)
+    res.set_cookie(key="user_id", value=str(user["id"]), httponly=True, path="/")
     return res
 
 @app.get("/logout")
 def logout():
     res = RedirectResponse(url="/login", status_code=302)
-    res.delete_cookie(key="user_id")
+    res.delete_cookie(key="user_id", path="/")
     return res
 
-# 2. لوحة تحكم الطالب (عرض الاختبارات المتاحة والمنجزة)
+# 2. لوحة تحكم الطالب
 @app.get("/student/dashboard", response_class=HTMLResponse)
 def student_dashboard(request: Request):
     user = get_current_user(request)
@@ -81,7 +90,6 @@ def student_dashboard(request: Request):
     conn = get_db()
     cursor = conn.cursor()
 
-    # جلب جميع اختبارات شعبة الطالب
     cursor.execute("""
         SELECT q.*, u.name as teacher_name,
                (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count,
@@ -103,7 +111,7 @@ def student_dashboard(request: Request):
         "now_str": now_str
     })
 
-# 3. تقديم الاختبار (الواجهة والعداد الزمني)
+# 3. واجهة تقديم الاختبار
 @app.get("/quiz/{quiz_id}", response_class=HTMLResponse)
 def take_quiz(request: Request, quiz_id: int):
     user = get_current_user(request)
@@ -113,26 +121,25 @@ def take_quiz(request: Request, quiz_id: int):
     conn = get_db()
     cursor = conn.cursor()
 
-    # التحقق من وجود الاختبار ومطابقته لشعبة الطالب
     cursor.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,))
     quiz = cursor.fetchone()
     if not quiz or quiz["class_name"] != user["class_name"]:
         conn.close()
         raise HTTPException(status_code=404, detail="الاختبار غير موجود أو غير مخصص لشعبتك")
 
-    # منع إعادة تقديم الاختبار نهائياً
+    # إذا كان الطالب قد سلم مسبقاً، يحول فوراً لصفحة النتيجة
     cursor.execute("SELECT id FROM submissions WHERE quiz_id = ? AND student_id = ?", (quiz_id, user["id"]))
     if cursor.fetchone():
         conn.close()
         return RedirectResponse(url=f"/quiz/{quiz_id}/result", status_code=302)
 
-    # التحقق من النطاق الزمني للاختبار
+    # التحقق من النطاق الزمني
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-    if now_str < quiz["start_date"] or now_str > quiz["end_date"]:
-        conn.close()
-        raise HTTPException(status_code=403, detail="هذا الاختبار مغلق حالياً وفق النطاق الزمني المحدد")
+    if quiz["start_date"] and quiz["end_date"]:
+        if now_str < quiz["start_date"] or now_str > quiz["end_date"]:
+            conn.close()
+            raise HTTPException(status_code=403, detail="هذا الاختبار مغلق حالياً وفق النطاق الزمني المحدد")
 
-    # جلب الأسئلة
     cursor.execute("SELECT * FROM questions WHERE quiz_id = ? ORDER BY id ASC", (quiz_id,))
     questions = cursor.fetchall()
     conn.close()
@@ -144,66 +151,79 @@ def take_quiz(request: Request, quiz_id: int):
         "questions": questions
     })
 
-# 4. تسليم الاختبار واحتساب العلامات (مع العلامات السالبة)
+# 4. تسليم الاختبار واحتساب العلامات (معالجة محصنة بالكامل)
 @app.post("/quiz/{quiz_id}/submit")
 async def submit_quiz(request: Request, quiz_id: int):
     user = get_current_user(request)
     if not user or user["role"] != "student":
-        return RedirectResponse(url="/login", status_code=302)
+        return RedirectResponse(url="/login", status_code=303)
 
-    form_data = await request.form()
     conn = get_db()
     cursor = conn.cursor()
 
-    # حماية مضاعفة: التأكد مجدداً أن الطالب لم يسبق له التسليم
+    # فحص مسبق: إذا كان مسلماً بالفعل، يتم التحويل لصفحة النتيجة فوراً
     cursor.execute("SELECT id FROM submissions WHERE quiz_id = ? AND student_id = ?", (quiz_id, user["id"]))
     if cursor.fetchone():
         conn.close()
-        return RedirectResponse(url=f"/quiz/{quiz_id}/result", status_code=302)
+        return RedirectResponse(url=f"/quiz/{quiz_id}/result", status_code=303)
 
     cursor.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,))
     quiz = cursor.fetchone()
+    if not quiz:
+        conn.close()
+        raise HTTPException(status_code=404, detail="الاختبار غير موجود")
 
     cursor.execute("SELECT * FROM questions WHERE quiz_id = ?", (quiz_id,))
     questions = cursor.fetchall()
 
-    total_possible = sum(q["points"] for q in questions)
+    form_data = await request.form()
     score = 0.0
+    total_possible = sum(float(q["points"]) for q in questions) if questions else 0.0
     student_answers = {}
 
-    # خوارزمية احتساب الدرجات والعلامات السالبة
+    has_negative = bool(quiz["has_negative_marking"])
+    negative_val = float(quiz["negative_mark_value"])
+
     for q in questions:
         q_id = str(q["id"])
         selected = form_data.get(f"q_{q_id}")
         student_answers[q_id] = selected
 
         if selected is None or selected == "":
-            # ترك السؤال فارغاً: 0 علامة (لا مكافأة ولا خصم)
             continue
         elif selected == q["correct_option"]:
-            # إجابة صحيحة: إضافة نقاط السؤال كاملة
             score += float(q["points"])
-        else:
-            # إجابة خاطئة: خصم في حال تفعيل نظام العلامات السالبة
-            if quiz["has_negative_marking"]:
-                score -= float(quiz["negative_mark_value"])
+        elif has_negative:
+            score -= negative_val
 
-    # ضمان عدم نزول العلامة عن الصفر كقاعدة منطقية
+    # حصر النتيجة عند الصفر
     score = max(0.0, round(score, 2))
     percentage = round((score / total_possible * 100), 1) if total_possible > 0 else 0.0
-    submitted_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    submitted_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    cursor.execute("""
-        INSERT INTO submissions (quiz_id, student_id, score, total_possible, percentage, submitted_at, answers_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (quiz_id, user["id"], score, total_possible, percentage, submitted_at, json.dumps(student_answers)))
+    # إدخال مرن يتعامل مع وجود أو غياب حقل answers_json بأمان
+    try:
+        cursor.execute("""
+            INSERT INTO submissions (quiz_id, student_id, score, total_possible, percentage, submitted_at, answers_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (quiz_id, user["id"], score, total_possible, percentage, submitted_at, json.dumps(student_answers)))
+        conn.commit()
+    except sqlite3.OperationalError:
+        # إذا لم يكن العمود answers_json موجوداً في الجدول
+        cursor.execute("""
+            INSERT INTO submissions (quiz_id, student_id, score, total_possible, percentage, submitted_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (quiz_id, user["id"], score, total_possible, percentage, submitted_at))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        # إذا حدث تكرار تسليم متزامن يتم تجاوزه بسلام
+        pass
+    finally:
+        conn.close()
 
-    conn.commit()
-    conn.close()
+    return RedirectResponse(url=f"/quiz/{quiz_id}/result", status_code=303)
 
-    return RedirectResponse(url=f"/quiz/{quiz_id}/result", status_code=302)
-
-# 5. عرض نتيجة الطالب
+# 5. عرض نتيجة الاختبار
 @app.get("/quiz/{quiz_id}/result", response_class=HTMLResponse)
 def quiz_result(request: Request, quiz_id: int):
     user = get_current_user(request)
@@ -230,7 +250,7 @@ def quiz_result(request: Request, quiz_id: int):
         "submission": submission
     })
 
-# 6. لوحة المعلم والإدارة (عرض النتائج والإحصائيات)
+# 6. لوحة تحكم المعلم والإدارة
 @app.get("/teacher/dashboard", response_class=HTMLResponse)
 def teacher_dashboard(request: Request):
     user = get_current_user(request)
@@ -240,14 +260,12 @@ def teacher_dashboard(request: Request):
     conn = get_db()
     cursor = conn.cursor()
 
-    # قائمة الاختبارات
     if user["role"] == "admin":
         cursor.execute("SELECT q.*, u.name as teacher_name FROM quizzes q JOIN users u ON q.teacher_id = u.id ORDER BY q.id DESC")
     else:
         cursor.execute("SELECT q.*, u.name as teacher_name FROM quizzes q JOIN users u ON q.teacher_id = u.id WHERE q.teacher_id = ? ORDER BY q.id DESC", (user["id"],))
     quizzes = cursor.fetchall()
 
-    # قائمة نتائج الطلاب
     query = """
         SELECT s.*, u.name as student_name, u.class_name, q.title as quiz_title
         FROM submissions s
@@ -261,10 +279,8 @@ def teacher_dashboard(request: Request):
         cursor.execute(query + " ORDER BY s.id DESC")
     submissions = cursor.fetchall()
 
-    # إحصائيات عامة
     total_submissions = len(submissions)
     avg_score = round(sum(s["percentage"] for s in submissions) / total_submissions, 1) if total_submissions > 0 else 0
-
     conn.close()
 
     return templates.TemplateResponse("teacher_dashboard.html", {
