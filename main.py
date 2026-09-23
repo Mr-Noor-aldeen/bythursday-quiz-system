@@ -291,3 +291,23 @@ def teacher_dashboard(request: Request):
         "total_submissions": total_submissions,
         "avg_score": avg_score
     })
+
+@app.get("/admin/impersonate/{target_user_id}")
+def admin_impersonate(request: Request, target_user_id: int):
+    user = get_current_user(request)
+    if not user or user["role"] != "admin":
+        return RedirectResponse(url="/login", status_code=303)
+    
+    conn = database.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE id = ?", (target_user_id,))
+    target = cursor.fetchone()
+    conn.close()
+    
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    redirect_url = "/teacher/dashboard" if target["role"] == "teacher" else "/student/dashboard"
+    response = RedirectResponse(url=redirect_url, status_code=303)
+    response.set_cookie(key="user_id", value=str(target["id"]))
+    return response

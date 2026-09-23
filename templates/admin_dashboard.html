@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مركز نور التعليمي — لوحة الإدارة العامة</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Tajawal', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen pb-16">
+
+  <!-- شريط الرأس الإداري -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-indigo-600/20">
+          ن
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-900 text-base leading-tight">مركز نور التعليمي — عمان</h1>
+          <p class="text-xs text-slate-500">لوحة الإدارة العامة والمراقبة الشاملة</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl">
+          <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+          <span class="text-xs font-bold text-indigo-900">نور (مديرة المركز)</span>
+        </div>
+        <a href="/logout" class="text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl transition">
+          تسجيل الخروج
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pt-6 space-y-6">
+
+    <!-- بطاقات الإحصاءات العامة للمركز -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+        <p class="text-xs font-bold text-slate-500 mb-1">إجمالي التسليمات</p>
+        <p class="text-2xl font-extrabold text-indigo-600">{{ total_submissions }}</p>
+      </div>
+      <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+        <p class="text-xs font-bold text-slate-500 mb-1">متوسط درجات المركز</p>
+        <p class="text-2xl font-extrabold text-emerald-600">{{ avg_score }}%</p>
+      </div>
+      <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+        <p class="text-xs font-bold text-slate-500 mb-1">طاقم المعلمين</p>
+        <p class="text-2xl font-extrabold text-blue-600">{{ teachers|length }} معلمين</p>
+      </div>
+      <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+        <p class="text-xs font-bold text-slate-500 mb-1">إجمالي الطلاب المسجلين</p>
+        <p class="text-2xl font-extrabold text-amber-600">{{ students|length }} طالباً</p>
+      </div>
+    </div>
+
+    <!-- ميزة التبديل السريع والدليل الشامل للمراجعين والمديرة -->
+    <div class="bg-white border border-indigo-200 rounded-2xl p-5 md:p-6 shadow-sm overflow-hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+        <div>
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span>👥 دليل شُعب المركز وميزة المعاينة السريعة (Reviewer Sandbox)</span>
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">انقر على زر المعاينة بجانب أي مستخدم لتقمص حسابه واختبار صلاحياته وعزل الشعبة بضغطة زر واحدة.</p>
+        </div>
+        <div class="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-lg self-start sm:self-auto">
+          🔒 خاص بالإدارة
+        </div>
+      </div>
+
+      <!-- أزرار التبويب بين المعلمين والشعب الثلاث -->
+      <div class="flex items-center gap-2 mt-4 pb-2 overflow-x-auto border-b border-slate-200">
+        <button onclick="switchTab('teachers')" id="tab-teachers" class="tab-btn px-4 py-2 text-xs font-bold rounded-xl transition bg-indigo-600 text-white">
+          طاقم المعلمين ({{ teachers|length }})
+        </button>
+        <button onclick="switchTab('class10A')" id="tab-class10A" class="tab-btn px-4 py-2 text-xs font-bold rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200">
+          الشعبة 10A (20 طالب)
+        </button>
+        <button onclick="switchTab('class10B')" id="tab-class10B" class="tab-btn px-4 py-2 text-xs font-bold rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200">
+          الشعبة 10B (20 طالب)
+        </button>
+        <button onclick="switchTab('class11A')" id="tab-class11A" class="tab-btn px-4 py-2 text-xs font-bold rounded-xl transition bg-slate-100 text-slate-600 hover:bg-slate-200">
+          الشعبة 11A (20 طالب)
+        </button>
+      </div>
+
+      <!-- محتوى تبويب المعلمين -->
+      <div id="content-teachers" class="tab-content mt-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {% for t in teachers %}
+          <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between gap-3">
+            <div>
+              <p class="font-bold text-sm text-slate-900">{{ t.name }}</p>
+              <p class="text-xs text-slate-500 font-mono mt-0.5">{{ t.username }}</p>
+            </div>
+            <a href="/admin/impersonate/{{ t.id }}" class="w-full text-center py-2 px-3 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-indigo-700 text-xs font-bold rounded-lg transition shadow-xs">
+              معاينة كمعلم ↗
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- محتوى تبويب الشعبة 10A -->
+      <div id="content-class10A" class="tab-content mt-4 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
+          {% for s in students if s.class_name == '10A' %}
+          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <p class="font-bold text-xs text-slate-900 truncate">{{ s.name }}</p>
+              <span class="text-[10px] text-slate-400 font-mono">{{ s.username }}</span>
+            </div>
+            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg transition">
+              معاينة ↗
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- محتوى تبويب الشعبة 10B -->
+      <div id="content-class10B" class="tab-content mt-4 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
+          {% for s in students if s.class_name == '10B' %}
+          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <p class="font-bold text-xs text-slate-900 truncate">{{ s.name }}</p>
+              <span class="text-[10px] text-slate-400 font-mono">{{ s.username }}</span>
+            </div>
+            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg transition">
+              معاينة ↗
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- محتوى تبويب الشعبة 11A -->
+      <div id="content-class11A" class="tab-content mt-4 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
+          {% for s in students if s.class_name == '11A' %}
+          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <p class="font-bold text-xs text-slate-900 truncate">{{ s.name }}</p>
+              <span class="text-[10px] text-slate-400 font-mono">{{ s.username }}</span>
+            </div>
+            <a href="/admin/impersonate/{{ s.id }}" class="shrink-0 text-xs font-bold text-blue-600 hover:bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg transition">
+              معاينة ↗
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- سجل تسليمات المركز الحية -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm">
+      <h2 class="text-sm font-bold text-slate-900 mb-4">سجل نتائج وتسليمات الطلاب الحية عبر المركز</h2>
+      
+      {% if submissions %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-right text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-400">
+              <th class="pb-3 font-medium">اسم الطالب</th>
+              <th class="pb-3 font-medium">الشعبة</th>
+              <th class="pb-3 font-medium">عنوان الاختبار</th>
+              <th class="pb-3 font-medium">الدرجة</th>
+              <th class="pb-3 font-medium">النسبة</th>
+              <th class="pb-3 font-medium">تاريخ التسليم</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for s in submissions %}
+            <tr class="hover:bg-slate-50">
+              <td class="py-3 font-bold text-slate-800">{{ s.student_name }}</td>
+              <td class="py-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono font-bold">{{ s.class_name }}</span></td>
+              <td class="py-3 text-slate-600">{{ s.quiz_title }}</td>
+              <td class="py-3 font-bold text-indigo-600">{{ s.score }} / {{ s.total_possible }}</td>
+              <td class="py-3 font-bold {% if s.percentage >= 50 %}text-emerald-600{% else %}text-rose-600{% endif %}">{{ s.percentage }}%</td>
+              <td class="py-3 font-mono text-slate-400 text-[11px]">{{ s.submitted_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-xs text-slate-400 py-6 text-center">لا توجد تسليمات مسجلة حتى الآن.</p>
+      {% endif %}
+    </div>
+
+  </main>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'text-white');
+        btn.classList.add('bg-slate-100', 'text-slate-600');
+      });
+
+      document.getElementById('content-' + tabId).classList.remove('hidden');
+      const activeBtn = document.getElementById('tab-' + tabId);
+      activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
+      activeBtn.classList.add('bg-indigo-600', 'text-white');
+    }
+  </script>
+</body>
+</html>
