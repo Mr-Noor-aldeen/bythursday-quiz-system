@@ -1,86 +1,177 @@
-# Amman Tutoring Center Quiz Engine
+# Arabic Quiz App | FastAPI + SQLite
 
-A clean, responsive, and robust web-based assessment platform built for Amman Tutoring Center (مركز نور التعليمي) to replace paper quizzes with timed, auto-graded digital assessments.
+A server-rendered quiz demo for an Arabic tutoring-center workflow: students view their class's quizzes, submit multiple-choice answers, and see their scores. Teachers see results for their quizzes, while an admin dashboard provides a center-wide overview and account-preview controls.
 
-Designed with a mobile-first approach, the system supports multi-role access (Admin, Teachers, Students), class-isolated quizzes, configurable negative marking (-0.5 penalties), and strict single-submission enforcement.
+Built with Python, FastAPI, SQLite, Jinja2, and browser JavaScript. The interface uses Arabic right-to-left layouts.
 
----
+## Try the demo
 
-## 🚀 One-Command Launch (Zero-Config / Clean Machine)
+**[Open the live demo](https://bythursday-quiz-system.vercel.app/)**
 
-The application starts immediately on any clean machine. The startup runner automatically detects missing dependencies, initializes the SQLite database schema, and seeds all sample data before launching.
+This is a portfolio demo with public sample accounts, not a service for real student records. Do not enter personal information or reuse a real password. On Vercel, the SQLite file lives in temporary storage, so changes may disappear and are not guaranteed to be shared between instances.
 
-### Single Command to Run:
+| Role | Username | Demo password |
+| --- | --- | --- |
+| Student, class 10A | `std_10a_01` | `student123` |
+| Teacher, mathematics | `t_ahmad` | `teacher123` |
+| Admin | `nour_admin` | `admin123` |
+
+These credentials are intentionally public and were already documented in this repository. They are not suitable for real accounts. For a reproducible review of quiz timing and submissions, run the app locally and inspect the seeded availability dates.
+
+## Screenshots
+
+Screenshots show sample data from the deployed demo, not real student records.
+
+### Student dashboard
+
+Class-specific quiz listings and submission status.
+
+![Arabic student dashboard with a class 10A quiz listing](docs/screenshots/student-dashboard.png)
+
+### Admin dashboard
+
+Sample user counts, submission statistics, and the reviewer account switcher.
+
+![Arabic admin dashboard with sample users and reviewer controls](docs/screenshots/admin-dashboard.png)
+
+### Teacher preview
+
+An admin viewing a teacher account, with a visible return-to-admin banner.
+
+![Teacher dashboard in admin preview mode with a return-to-admin banner](docs/screenshots/teacher-preview.png)
+
+## Implemented features
+
+- **Student workflow:** class-specific quiz listings, multiple-choice questions, answer clearing, submission, and a result page.
+- **Scoring:** per-question points, configurable negative marking, no penalty for unanswered questions, and a final score floored at zero.
+- **Single submission:** an existing-submission check and a SQLite unique constraint on each student/quiz pair.
+- **Quiz timing:** the quiz page checks its availability window when opened; a browser countdown submits the form when it reaches zero. This is not a server-enforced exam timer.
+- **Teacher dashboard:** quizzes, submitted results, and average percentages filtered by the teacher's quiz ownership.
+- **Admin dashboard:** center-wide submission statistics, teacher/student rosters, and signed reviewer switching with return to the original admin.
+- **Demo data:** one admin, four teachers, 60 students across three classes, and a 15-question mathematics quiz seeded on a fresh database.
+
+There is no self-service registration, password-reset flow, or quiz-authoring interface in the current app.
+
+## Tech stack
+
+| Layer | Implementation |
+| --- | --- |
+| Backend | Python, FastAPI, Starlette responses |
+| Data | SQLite through Python's `sqlite3`, SQL queries |
+| Pages | Jinja2 templates, HTML, Arabic RTL layouts |
+| Styling | Tailwind CSS CDN and Google Fonts |
+| Browser behavior | JavaScript countdown and answer controls |
+| Password storage | Standard-library PBKDF2-HMAC-SHA256 |
+| Session integrity | Standard-library HMAC-SHA256 signed cookies |
+| Tests | pytest, FastAPI TestClient, HTTPX |
+| Demo hosting | Vercel |
+
+## Run locally
+
+Use a Python environment with `venv` and `pip` available. Python 3.10 was used for the verification described below. Dependency versions are ranged in `requirements.txt`, not locked.
 
 ```bash
+git clone https://github.com/Mr-Noor-aldeen/bythursday-quiz-system.git
+cd bythursday-quiz-system
+python -m venv .venv
+```
+
+Activate the environment:
+
+```bash
+# macOS / Linux
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
+
+Install dependencies and start the app:
+
+```bash
+python -m pip install -r requirements.txt
 python run.py
 ```
 
-Open [**http://127.0.0.1:8000**](http://127.0.0.1:8000) in your browser or phone.
+Open **http://127.0.0.1:8000/** on the same computer. The runner binds to localhost, not to other devices on the network. It also reconciles dependencies from `requirements.txt` before launch, so the initial setup needs network access.
 
-## 🧪 Run Automated Tests (Single Command)
+The first database access creates `quiz.db` and seeds sample data. Creating separate salted hashes for all 65 accounts adds time to that first initialization. Later starts reuse the database. The page styling and fonts also require access to their external CDNs.
 
-To execute the test suite verifying data integrity, negative marking rules, single-submission constraints, and authentication:
+Use the app's automatic seed path for this setup. The separate `seed.py` script has pre-existing duplicate-user and schema mismatches and is not the supported fresh-start command.
+
+### Session-secret configuration
+
+For a single-process local demo, the app generates a random in-memory signing key if `QUIZ_SESSION_SECRET` is unset and prints a warning. Restarting the process, including a development reload, invalidates those local sessions.
+
+For deployment or multiple workers, securely generate a random secret of at least 32 bytes and supply it as `QUIZ_SESSION_SECRET`. Keep it out of source control and chat messages. All instances in the same environment must use the same stable value.
+
+On Vercel:
+
+1. Open the project's **Settings > Environment Variables**.
+2. Add `QUIZ_SESSION_SECRET` as a **Secret** variable for Production and for Preview if preview deployments are used.
+3. Deploy again after saving it. Changing the key signs out existing sessions.
+
+On Vercel, startup fails clearly if this variable is missing or shorter than 32 bytes. Other deployed environments must also set it explicitly rather than relying on the local fallback.
+
+## Tests and verification
 
 ```bash
-python run.py --test
+python -m pytest -q
 ```
 
-*(Or run `pytest` directly).*
+The runner also supports `python run.py --test`, which installs/reconciles dependencies before running pytest.
 
-## 👥 Seeded Users & Login Credentials
+At commit `ce694b2`, all **30 tests passed** in a Python 3.10 environment. Coverage includes seed-data checks, scoring calculations, the duplicate-submission constraint, login behavior, password hashing, legacy password upgrades, cookie tampering and expiry, configuration checks, and reviewer switching/authorization.
 
-All sample data described in the client brief is automatically seeded on startup:
+Some original scoring tests check calculations directly rather than submitting a quiz through HTTP. The suite is not full end-to-end coverage of every route.
 
-| **Role**                    | **Username**                 | **Password** | **Scope / Description**                                           |
-| --------------------------- | ---------------------------- | ------------ | ----------------------------------------------------------------- |
-| **Center Director (Admin)** | `nour_admin`                 | `admin123`   | Global overview across all teachers, classes, and center averages |
-| **Teacher (Math)**          | `t_ahmad`                    | `teacher123` | Class 10A Mathematics                                             |
-| **Teacher (Physics)**       | `t_sarah`                    | `teacher123` | Physics curriculum                                                |
-| **Teacher (Chemistry)**     | `t_khaled`                   | `teacher123` | Chemistry curriculum                                              |
-| **Teacher (Biology)**       | `t_reem`                     | `teacher123` | Biology curriculum                                                |
-| **Student (Class 10A)**     | `std_10a_01` to `std_10a_20` | `student123` | Class 10A (20 students)                                           |
-| **Student (Class 10B)**     | `std_10b_01` to `std_10b_20` | `student123` | Class 10B (20 students)                                           |
-| **Student (Class 11A)**     | `std_11a_01` to `std_11a_20` | `student123` | Class 11A (20 students)                                           |
+Additional checks at that revision included real Uvicorn startup, the login page, and deployed admin/student login plus admin-to-teacher preview and return. The screenshots above come from those deployed checks. This is verification of those paths, not a claim that every workflow or device has been tested.
 
-> 💡 **Reviewer Sandbox Tip:** Log in as **`nour_admin`** to access the **Reviewer Sandbox** directly inside the Admin Dashboard. You can preview and test any teacher or student portal with a single click without logging out!
+## Security and current limits
 
-## 🌐 Live Production Deployment
+### Improvements implemented
 
-The application is deployed and live for visual preview:
+- Newly seeded passwords use PBKDF2-HMAC-SHA256 with 600,000 iterations and a separate random 16-byte salt per account.
+- Existing plaintext password rows are upgraded only after a successful login. Rows for users who have not logged in remain in the legacy format until then.
+- User and reviewer cookies are signed, purpose-bound, and expire after 12 hours. Signature verification uses constant-time comparison.
+- Cookies are HttpOnly and SameSite=Lax; on Vercel they also use Secure for HTTPS.
+- Reviewer proof is tied to the current target user and original admin. Login/logout clear reviewer state, and returning to admin requires valid reviewer proof.
+- Old unsigned cookies are not accepted. Users with those sessions must sign in again; account passwords are unchanged.
 
-* **Live URL:** https://bythursday-quiz-system.vercel.app
+### Limits before real use
 
-*(Note: For full state persistence and test isolation with SQLite, running locally via `python run.py` is recommended).*
+- Public demo credentials still allow anyone to enter the demo accounts. Hashing does not make a published password private.
+- Signed cookies are not encrypted. A stolen valid cookie can be replayed until expiry; logout clears the browser's copy rather than revoking it server-side.
+- The submit endpoint does not independently repeat the class-membership and availability checks made when opening a quiz. It also does not enforce elapsed exam time on the server. Do not use this as a high-stakes assessment system.
+- Dedicated CSRF protection, login rate limiting, password recovery, and a full authorization/security audit are not implemented.
+- SQLite under Vercel's `/tmp` is not durable shared storage. Use a suitable persistent database before collecting real records.
+- Some routes are defined more than once in `main.py`; consolidating them is future cleanup, not a completed refactor.
+- Seeded quiz dates are fixed, not updated to today's date. Screenshots or dashboard labels do not guarantee that a seeded quiz is currently open.
 
+## Project layout
 
-## Session-cookie configuration
+```text
+main.py                    FastAPI routes and page responses
+database.py                SQLite schema and automatic sample data
+password_security.py       Password hashing and legacy-login upgrade
+session_security.py        Cookie signing, expiry, and key configuration
+templates/                 Arabic pages and browser behavior
+test_quiz.py               Original data, scoring, and login checks
+test_password_security.py  Password-storage regression tests
+test_session_security.py   Session and reviewer-authorization tests
+run.py                     Dependency setup, dev server, and test runner
+seed.py                    Older standalone seed script; see limits above
+AI_USAGE.md                Project's AI-use notes
+DECISIONS.md               Project's implementation notes
+docs/screenshots/          Demo images used in this README
+```
 
-Cookies are signed with HMAC-SHA256, purpose-bound, and expire after 12 hours.
-They are HttpOnly and SameSite=Lax; Vercel also uses Secure cookies (HTTPS).
-Signing prevents editing an ID, but does not encrypt cookie contents or stop
-someone who steals a valid cookie. The public demo passwords are still public.
+## Next steps
 
-For a single-process local demo, `python run.py` works without configuration:
-a random in-memory key is generated and a warning is printed. Restarting the
-process invalidates local sessions. Do not use this fallback with multiple
-workers or on a deployed service.
+- Repeat authorization, quiz-window, and elapsed-time checks at submission.
+- Replace temporary demo storage with a persistent deployment database.
+- Add CSRF protection, login throttling, and session revocation.
+- Consolidate duplicate routes and reconcile the standalone seed script.
+- Add HTTP-level quiz-submission tests and browser tests for the full student workflow.
 
-For Vercel or another deployment, securely generate and store a random secret
-of at least 32 bytes as `QUIZ_SESSION_SECRET`. Never commit it. In Vercel:
-
-1. Open this project's Settings > Environment Variables.
-2. Add `QUIZ_SESSION_SECRET` as a sensitive variable for Production and for
-   Preview if preview deployments are used. Use a securely generated value,
-   not a password or an example copied from documentation.
-3. Redeploy after saving the variable. All instances for each environment
-   must receive the same stable value. Changing it signs everyone out.
-
-On Vercel, startup fails clearly if the secret is missing or shorter than
-32 bytes, instead of silently using a known or unstable signing key.
-
-Existing unsigned sessions cannot be trusted and must sign in once again.
-User accounts and passwords are unchanged. Reviewer switching uses a separate
-signed proof tied to the current user and the original admin, and return to
-admin requires that proof. Logging out or logging in clears reviewer state.
-These changes are not a complete security audit or a production-readiness claim.
+These are planned improvements, not existing features.
