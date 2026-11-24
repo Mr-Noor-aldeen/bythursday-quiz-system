@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from password_security import hash_password
 
 def get_db_path():
     # استخدام مجلد /tmp في بيئة Vercel أو عند انعدام صلاحية الكتابة
@@ -86,8 +87,15 @@ def init_db():
 def seed_initial_data(conn):
     cursor = conn.cursor()
     
+    # Hash only newly inserted demo accounts; keep existing users unchanged.
+    existing_ids = {row[0] for row in cursor.execute("SELECT id FROM users")}
+
     # 1. حساب المديرة
-    cursor.execute("INSERT OR IGNORE INTO users (id, name, username, password, role, class_name) VALUES (1, 'نور (المديرة العامة)', 'nour_admin', 'admin123', 'admin', NULL)")
+    if 1 not in existing_ids:
+        cursor.execute(
+            "INSERT OR IGNORE INTO users (id, name, username, password, role, class_name) VALUES (1, ?, ?, ?, 'admin', NULL)",
+            ('نور (المديرة العامة)', 'nour_admin', hash_password('admin123')),
+        )
     
     # 2. حسابات المعلمين الأربعة
     teachers = [
@@ -96,7 +104,11 @@ def seed_initial_data(conn):
         (4, 'أ. خالد التميمي (كيمياء)', 't_khaled', 'teacher123', 'teacher', None),
         (5, 'أ. ريم الكردي (أحياء)', 't_reem', 'teacher123', 'teacher', None),
     ]
-    cursor.executemany("INSERT OR IGNORE INTO users (id, name, username, password, role, class_name) VALUES (?, ?, ?, ?, ?, ?)", teachers)
+    cursor.executemany("INSERT OR IGNORE INTO users (id, name, username, password, role, class_name) VALUES (?, ?, ?, ?, ?, ?)", [
+        (uid, name, username, hash_password(password), role, cls)
+        for uid, name, username, password, role, cls in teachers
+        if uid not in existing_ids
+    ])
 
     # 3. حسابات 60 طالباً للشعب الثلاث
     classes = ['10A', '10B', '11A']
@@ -112,9 +124,12 @@ def seed_initial_data(conn):
         for i in range(1, 21):
             name = names_pool[(i - 1) % len(names_pool)]
             uname = f"std_{cls.lower()}_{i:02d}"
+            if student_id in existing_ids:
+                student_id += 1
+                continue
             cursor.execute(
                 "INSERT OR IGNORE INTO users (id, name, username, password, role, class_name) VALUES (?, ?, ?, ?, 'student', ?)",
-                (student_id, f"{name} ({cls})", uname, "student123", cls)
+                (student_id, f"{name} ({cls})", uname, hash_password("student123"), cls)
             )
             student_id += 1
 
