@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request, Form, HTTPException, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database import get_db
+from password_security import authenticate_user
 
 
 # Universal backward & forward compatibility wrapper for Jinja2Templates
@@ -81,10 +82,10 @@ def login_submit(
     password: str = Form(...)
 ):
     conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username.strip(), password.strip()))
-    user = cursor.fetchone()
-    conn.close()
+    try:
+        user = authenticate_user(conn, username, password)
+    finally:
+        conn.close()
 
     if not user:
         return templates.TemplateResponse("login.html", {
@@ -445,10 +446,10 @@ def admin_dashboard_view(request: Request):
 @app.post("/login")
 def login_handler(request: Request, username: str = Form(...), password: str = Form(...)):
     conn = database.get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username.strip(), password.strip()))
-    user = cursor.fetchone()
-    conn.close()
+    try:
+        user = authenticate_user(conn, username, password)
+    finally:
+        conn.close()
 
     if not user:
         return templates.TemplateResponse("login.html", {
