@@ -134,9 +134,10 @@ def seed_initial_data(conn):
             student_id += 1
 
     # 4. الاختبار التجريبي لشعبة 10A
+    # Deliberately broad demo window, not a real assessment schedule.
     cursor.execute("""
         INSERT OR IGNORE INTO quizzes (id, title, class_name, duration_minutes, start_date, end_date, has_negative_marking, negative_mark_value, teacher_id)
-        VALUES (1, 'اختبار الرياضيات الأسبوعي - الجبر والمصفوفات', '10A', 20, '2026-09-01 00:00', '2026-10-01 00:00', 1, 0.5, 2)
+        VALUES (1, 'اختبار الرياضيات الأسبوعي - الجبر والمصفوفات', '10A', 20, '2020-01-01 00:00', '2099-12-31 23:59', 1, 0.5, 2)
     """)
 
     # 5. حذف الأسئلة القديمة وإدخال بنك الأسئلة الرياضية الحقيقية الـ 15

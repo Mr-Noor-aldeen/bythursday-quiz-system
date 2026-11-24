@@ -181,6 +181,15 @@ def student_dashboard(request: Request):
         "user": user,
         "quizzes": quizzes
     })
+def validate_quiz_access(quiz, user):
+    if not quiz or quiz["class_name"] != user["class_name"]:
+        raise HTTPException(status_code=404, detail="Quiz not found for your class")
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    if ((quiz["start_date"] and now_str < quiz["start_date"]) or
+            (quiz["end_date"] and now_str > quiz["end_date"])):
+        raise HTTPException(status_code=403, detail="Quiz is outside its availability window")
+
+
 @app.get("/quiz/{quiz_id}", response_class=HTMLResponse)
 def take_quiz(request: Request, quiz_id: int):
     user = get_current_user(request)
@@ -192,22 +201,16 @@ def take_quiz(request: Request, quiz_id: int):
 
     cursor.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,))
     quiz = cursor.fetchone()
-    if not quiz or quiz["class_name"] != user["class_name"]:
+    try:
+        validate_quiz_access(quiz, user)
+    except HTTPException:
         conn.close()
-        raise HTTPException(status_code=404, detail="الاختبار غير موجود أو غير مخصص لشعبتك")
+        raise
 
-    # إذا كان الطالب قد سلم مسبقاً، يحول فوراً لصفحة النتيجة
     cursor.execute("SELECT id FROM submissions WHERE quiz_id = ? AND student_id = ?", (quiz_id, user["id"]))
     if cursor.fetchone():
         conn.close()
         return RedirectResponse(url=f"/quiz/{quiz_id}/result", status_code=302)
-
-    # التحقق من النطاق الزمني
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-    if quiz["start_date"] and quiz["end_date"]:
-        if now_str < quiz["start_date"] or now_str > quiz["end_date"]:
-            conn.close()
-            raise HTTPException(status_code=403, detail="هذا الاختبار مغلق حالياً وفق النطاق الزمني المحدد")
 
     cursor.execute("SELECT * FROM questions WHERE quiz_id = ? ORDER BY id ASC", (quiz_id,))
     questions = cursor.fetchall()
@@ -227,25 +230,24 @@ async def submit_quiz(request: Request, quiz_id: int):
     if not user or user["role"] != "student":
         return RedirectResponse(url="/login", status_code=303)
 
+    form_data = await request.form()
     conn = get_db()
     cursor = conn.cursor()
+    quiz = cursor.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,)).fetchone()
+    try:
+        validate_quiz_access(quiz, user)
+    except HTTPException:
+        conn.close()
+        raise
 
-    # فحص مسبق: إذا كان مسلماً بالفعل، يتم التحويل لصفحة النتيجة فوراً
     cursor.execute("SELECT id FROM submissions WHERE quiz_id = ? AND student_id = ?", (quiz_id, user["id"]))
     if cursor.fetchone():
         conn.close()
         return RedirectResponse(url=f"/quiz/{quiz_id}/result", status_code=303)
 
-    cursor.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,))
-    quiz = cursor.fetchone()
-    if not quiz:
-        conn.close()
-        raise HTTPException(status_code=404, detail="الاختبار غير موجود")
-
     cursor.execute("SELECT * FROM questions WHERE quiz_id = ?", (quiz_id,))
     questions = cursor.fetchall()
 
-    form_data = await request.form()
     score = 0.0
     total_possible = sum(float(q["points"]) for q in questions) if questions else 0.0
     student_answers = {}
