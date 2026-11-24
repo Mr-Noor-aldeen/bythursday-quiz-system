@@ -124,7 +124,7 @@ Additional checks included real Uvicorn startup and the complete student login, 
 - Dedicated CSRF protection, login rate limiting, password recovery, and a full authorization/security audit are not implemented.
 - SQLite under Vercel's `/tmp` is not durable shared storage. Use a suitable persistent database before collecting real records.
 - Some routes are defined more than once in `main.py`; consolidating them is future cleanup, not a completed refactor.
-- Seeded quiz dates are fixed, not updated to today's date. Screenshots or dashboard labels do not guarantee that a seeded quiz is currently open.
+- The seeded 2020-2099 availability window is deliberately broad for the portfolio demo. It is not a real assessment schedule; saved local databases retain their existing dates.
 
 ## Project layout
 
