@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime, timedelta
 from database import get_db, init_db
+from password_security import hash_password
 
 def seed_all():
     # إعادة تهيئة الجداول لتنظيف قاعدة البيانات
@@ -14,7 +15,7 @@ def seed_all():
     cursor.execute("""
         INSERT INTO users (name, username, password, role, class_name)
         VALUES (?, ?, ?, ?, ?)
-    """, ("نور المشرف", "nour_admin", "admin123", "admin", None))
+    """, ("نور المشرف", "nour_admin", hash_password("admin123"), "admin", None))
 
     # 2. حسابات المعلمين الأربعة
     teachers = [
@@ -26,7 +27,8 @@ def seed_all():
     cursor.executemany("""
         INSERT INTO users (name, username, password, role, class_name)
         VALUES (?, ?, ?, ?, NULL)
-    """, teachers)
+    """, [(name, username, hash_password(password), role)
+          for name, username, password, role in teachers])
 
     # 3. توليد 60 طالباً (20 لكل شعبة: 10A, 10B, 11A) بأسماء عربية واقعية
     first_names = [
@@ -43,7 +45,7 @@ def seed_all():
             name = f"{first_names[(i - 1) % len(first_names)]} {last_names[(i - 1) % len(last_names)]}"
             username = f"std_{c_name.lower()}_{i:02d}"
             password = "student123"  # كلمة مرور موحدة لتسهيل الاختبار للمراجعين
-            students.append((name, username, password, "student", c_name))
+            students.append((name, username, hash_password(password), "student", c_name))
 
     cursor.executemany("""
         INSERT INTO users (name, username, password, role, class_name)
