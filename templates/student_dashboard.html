@@ -10,7 +10,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 antialiased pb-16">
 
-  {% if request.cookies.get('reviewer_admin') == '1' %}
+  {% if request.state.is_reviewer %}
   <!-- شريط العودة للمديرة والمراجعين -->
   <div class="bg-indigo-900 text-white px-4 py-2.5 flex items-center justify-between text-xs font-bold sticky top-0 z-50 shadow-md">
     <div class="flex items-center gap-2">

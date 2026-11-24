@@ -52,3 +52,35 @@ The application is deployed and live for visual preview:
 * **Live URL:** https://bythursday-quiz-system.vercel.app
 
 *(Note: For full state persistence and test isolation with SQLite, running locally via `python run.py` is recommended).*
+
+
+## Session-cookie configuration
+
+Cookies are signed with HMAC-SHA256, purpose-bound, and expire after 12 hours.
+They are HttpOnly and SameSite=Lax; Vercel also uses Secure cookies (HTTPS).
+Signing prevents editing an ID, but does not encrypt cookie contents or stop
+someone who steals a valid cookie. The public demo passwords are still public.
+
+For a single-process local demo, `python run.py` works without configuration:
+a random in-memory key is generated and a warning is printed. Restarting the
+process invalidates local sessions. Do not use this fallback with multiple
+workers or on a deployed service.
+
+For Vercel or another deployment, securely generate and store a random secret
+of at least 32 bytes as `QUIZ_SESSION_SECRET`. Never commit it. In Vercel:
+
+1. Open this project's Settings > Environment Variables.
+2. Add `QUIZ_SESSION_SECRET` as a sensitive variable for Production and for
+   Preview if preview deployments are used. Use a securely generated value,
+   not a password or an example copied from documentation.
+3. Redeploy after saving the variable. All instances for each environment
+   must receive the same stable value. Changing it signs everyone out.
+
+On Vercel, startup fails clearly if the secret is missing or shorter than
+32 bytes, instead of silently using a known or unstable signing key.
+
+Existing unsigned sessions cannot be trusted and must sign in once again.
+User accounts and passwords are unchanged. Reviewer switching uses a separate
+signed proof tied to the current user and the original admin, and return to
+admin requires that proof. Logging out or logging in clears reviewer state.
+These changes are not a complete security audit or a production-readiness claim.

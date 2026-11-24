@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database import get_db
 from password_security import authenticate_user
+from session_security import read_cookie, set_signed_cookie
 
 
 # Universal backward & forward compatibility wrapper for Jinja2Templates
@@ -42,7 +43,8 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 def get_current_user(request: Request):
     """التحقق الآمن من جلسة المستخدم عبر الكوكيز"""
-    user_id = request.cookies.get("user_id")
+    request.state.is_reviewer = False
+    user_id = read_cookie(request.cookies.get("user_id"), "user_id")
     if not user_id:
         return None
     try:
@@ -51,9 +53,29 @@ def get_current_user(request: Request):
         cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
         user = cursor.fetchone()
         conn.close()
+        if user:
+            request.state.is_reviewer = get_reviewer_admin(request, user) is not None
         return user
     except Exception:
         return None
+
+def get_reviewer_admin(request: Request, user):
+    """Reviewer proof binds the original admin to the current signed user."""
+    proof = read_cookie(request.cookies.get("reviewer_admin"), "reviewer_admin")
+    if not user or not proof:
+        return None
+    try:
+        admin_id, target_id = proof.split(":")
+    except ValueError:
+        return None
+    if target_id != str(user["id"]):
+        return None
+    conn = get_db()
+    try:
+        return conn.execute("SELECT * FROM users WHERE id = ? AND role = 'admin'", (admin_id,)).fetchone()
+    finally:
+        conn.close()
+
 
 # --- المسارات الرئيسية (Routes) ---
 
@@ -95,13 +117,15 @@ def login_submit(
 
     target_url = "/student/dashboard" if user["role"] == "student" else "/teacher/dashboard"
     res = RedirectResponse(url=target_url, status_code=303)
-    res.set_cookie(key="user_id", value=str(user["id"]), httponly=True, path="/")
+    set_signed_cookie(res, "user_id", user["id"])
+    res.delete_cookie(key="reviewer_admin", path="/")
     return res
 
 @app.get("/logout")
 def logout():
     res = RedirectResponse(url="/login", status_code=302)
     res.delete_cookie(key="user_id", path="/")
+    res.delete_cookie(key="reviewer_admin", path="/")
     return res
 
 # 2. لوحة تحكم الطالب
@@ -380,8 +404,8 @@ def teacher_dashboard(request: Request):
 @app.get("/admin/impersonate/{target_user_id}")
 def admin_impersonate(request: Request, target_user_id: int):
     user = get_current_user(request)
-    is_reviewer = request.cookies.get("reviewer_admin") == "1"
-    if not (user and user["role"] == "admin") and not is_reviewer:
+    admin = user if user and user["role"] == "admin" else get_reviewer_admin(request, user)
+    if not admin:
         return RedirectResponse(url="/login", status_code=303)
 
     conn = database.get_db()
@@ -395,14 +419,18 @@ def admin_impersonate(request: Request, target_user_id: int):
 
     dest = "/teacher/dashboard" if target["role"] == "teacher" else "/student/dashboard"
     response = RedirectResponse(url=dest, status_code=303)
-    response.set_cookie(key="user_id", value=str(target["id"]))
-    response.set_cookie(key="reviewer_admin", value="1")
+    set_signed_cookie(response, "user_id", target["id"])
+    set_signed_cookie(response, "reviewer_admin", f"{admin['id']}:{target['id']}")
     return response
 
 @app.get("/admin/exit-impersonate")
-def admin_exit_impersonate():
+def admin_exit_impersonate(request: Request):
+    user = get_current_user(request)
+    admin = get_reviewer_admin(request, user)
+    if not admin:
+        return RedirectResponse(url="/login", status_code=303)
     response = RedirectResponse(url="/admin/dashboard", status_code=303)
-    response.set_cookie(key="user_id", value="1")
+    set_signed_cookie(response, "user_id", admin["id"])
     response.delete_cookie(key="reviewer_admin")
     return response
 @app.get("/admin")
@@ -466,5 +494,6 @@ def login_handler(request: Request, username: str = Form(...), password: str = F
         dest = "/student/dashboard"
 
     response = RedirectResponse(url=dest, status_code=303)
-    response.set_cookie(key="user_id", value=str(user["id"]))
+    set_signed_cookie(response, "user_id", user["id"])
+    response.delete_cookie(key="reviewer_admin", path="/")
     return response
