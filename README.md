@@ -18,28 +18,6 @@ This is a portfolio demo with public sample accounts, not a service for real stu
 
 These credentials are intentionally public and were already documented in this repository. They are not suitable for real accounts. For a reproducible review of quiz timing and submissions, run the app locally and inspect the seeded availability dates.
 
-## Screenshots
-
-Screenshots show sample data from the deployed demo, not real student records.
-
-### Student dashboard
-
-Class-specific quiz listings and submission status.
-
-![Arabic student dashboard with a class 10A quiz listing](docs/screenshots/student-dashboard.png)
-
-### Admin dashboard
-
-Sample user counts, submission statistics, and the reviewer account switcher.
-
-![Arabic admin dashboard with sample users and reviewer controls](docs/screenshots/admin-dashboard.png)
-
-### Teacher preview
-
-An admin viewing a teacher account, with a visible return-to-admin banner.
-
-![Teacher dashboard in admin preview mode with a return-to-admin banner](docs/screenshots/teacher-preview.png)
-
 ## Implemented features
 
 - **Student workflow:** class-specific quiz listings, multiple-choice questions, answer clearing, submission, and a result page.
@@ -125,7 +103,7 @@ At commit `ce694b2`, all **30 tests passed** in a Python 3.10 environment. Cover
 
 Some original scoring tests check calculations directly rather than submitting a quiz through HTTP. The suite is not full end-to-end coverage of every route.
 
-Additional checks at that revision included real Uvicorn startup, the login page, and deployed admin/student login plus admin-to-teacher preview and return. The screenshots above come from those deployed checks. This is verification of those paths, not a claim that every workflow or device has been tested.
+Additional checks at that revision included real Uvicorn startup, the login page, and deployed admin/student login plus admin-to-teacher preview and return. This is verification of those paths, not a claim that every workflow or device has been tested.
 
 ## Security and current limits
 
@@ -163,7 +141,6 @@ run.py                     Dependency setup, dev server, and test runner
 seed.py                    Older standalone seed script; see limits above
 AI_USAGE.md                Project's AI-use notes
 DECISIONS.md               Project's implementation notes
-docs/screenshots/          Demo images used in this README
 ```
 
 ## Next steps
